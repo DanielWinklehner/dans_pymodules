@@ -1,1 +1,1 @@
-from mycolors import MyColors
+from mycolors import *

@@ -1,1 +1,1 @@
-from particles import IonSpecies
+from particles import *
