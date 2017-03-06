@@ -9,16 +9,76 @@ amu = const.value("atomic mass constant energy equivalent in MeV")
 echarge = const.value("elementary charge")
 clight = const.value("speed of light in vacuum")
 
+presets = {'proton': {'mass_mev': const.value('proton mass energy equivalent in MeV'),
+                      'a': 1.007316,
+                      'z': 1.0,
+                      'q': 1.0},
+           'H2_1+': {'mass_mev': 1876.634889,
+                     'a': 2.0147,
+                     'z': 2.0,
+                     'q': 1.0},
+           '4He_2+': {'mass_mev': 3727.379378,
+                      'a': 4.0026022,
+                      'z': 2.0,
+                      'q': 2.0}}
+
 
 class IonSpecies:
 
     def __init__(self,
-                 label="proton",
-                 mass_mev=const.value('proton mass energy equivalent in MeV'),
-                 a=1.007316,
+                 label,
+                 energy_mev,
+                 mass_mev=None,
+                 a=None,
                  z=None,
-                 q=1.0,
-                 energy_mev=1.0):
+                 q=None,
+                 debug=False):
+
+        """
+        Simple ion species class that holds data and can calculate some basic values like rigidity and emergy.
+        :param label: Name of the species, can be one of the presets:
+            'protons'
+            'H2_1+'
+            '4He_2+'
+        if it is not a preset, the following four have to be defined as well:
+        :param mass_mev:
+        :param a:
+        :param z:
+        :param q:
+        :param energy_mev:
+        """
+
+        # Check if user wants a preset ion species:
+        if label in presets.keys():
+
+            species = presets[label]
+
+            mass_mev = species["mass_mev"]
+            z = species["z"]
+            a = species["a"]
+            q = species["q"]
+
+            if debug:
+                print("Using preset ion species {}:".format(label))
+                print("m_0 = {:.2f} MeV/c^2, q = {:.1f} e, E_kin = {:.2f} MeV". format(mass_mev, q, energy_mev))
+
+        # If not, check for missing initial values
+        else:
+
+            init_values = [mass_mev, a, z, q]
+
+            if None in init_values:
+
+                print("Sorry, ion species {} was initialized with missing values ('None')!".format(label))
+                print("mass_mev = {}, a = {}, z = {}, q = {}". format(mass_mev, a, z, q))
+
+                exit(1)
+
+            else:
+
+                if debug:
+                    print("User defined ion species {}:".format(label))
+                    print("m_0 = {:.2f} MeV/c^2, q = {:.1f} e, E_kin = {:.2f} MeV".format(mass_mev, q, energy_mev))
 
         # Initialize values (default for a proton)
         self.label = label            # A label for this species
@@ -88,8 +148,11 @@ class IonSpecies:
 
 
 if __name__ == '__main__':
-    ion = IonSpecies(label="4He2+", mass_mev=3727.379378, a=4.0026022, q=2.0, energy_mev=30.0)
-    # ion = IonSpecies(label=r"$\mathrm{H}_2^+$", mass_mev=1876.634889, a=2.0147, q=1.0, energy_mev=30.0)
+
+    print("Testing IonSpecies class:")
+
+    ion = IonSpecies(label="4He_2+", energy_mev=30.0)
+
     print("Species {}".format(ion.label))
     print("Relativistic gamma = {}".format(ion.gamma))
     print("Relativistic beta = {}".format(ion.beta))
