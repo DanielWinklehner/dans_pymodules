@@ -154,7 +154,8 @@ if __name__ == '__main__':
     ion = IonSpecies(label="4He_2+", energy_mev=30.0)
 
     print("Species {}".format(ion.label))
+    print("Energy = {} MeV/amu".format(ion.energy_mev))
     print("Relativistic gamma = {}".format(ion.gamma))
     print("Relativistic beta = {}".format(ion.beta))
-    print("Relativistic b-rho = {} T-m".format(ion.b_rho))
+    print("B-rho = {} T-m".format(ion.b_rho))
     print("B Field for 40 cm radius = {} T".format(ion.b_rho / 0.4))
