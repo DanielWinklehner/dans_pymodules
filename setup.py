@@ -1,11 +1,11 @@
 from setuptools import setup
 
-setup(name='particles',
+setup(name='dans_pymodules',
       version='2.1',
-      description='Simple class to hold and calculate particle data like energy, mass, charge, etc.',
+      description='Useful little modules that I likely need in more than one application',
       url='https://github.com/DanielWinklehner/dans_pymodules',
       author='Daniel Winklehner, Philip Weigel',
       author_email='winklehn@mit.edu',
       license='MIT',
-      packages=['particles'],
+      packages=['particles', 'mycolors'],
       zip_safe=False)
