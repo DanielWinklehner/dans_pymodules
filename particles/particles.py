@@ -102,6 +102,19 @@ class IonSpecies:
 
         self.calculate_from_energy_mev()
 
+    def __str__(self):
+        return "Ion Species {} with label {}:\n" \
+               "M_0 = {} MeV/c^2, q = {}, B-Rho = {},\n" \
+               "E_kin = {} MeV, beta = {}, gamma = {}" \
+               "".format(self._name,
+                         self._label,
+                         self._mass_mev,
+                         self._q,
+                         self._b_rho,
+                         self._energy_mev,
+                         self._beta,
+                         self._gamma)
+
     def energy_mev(self):
         return self._energy_mev
 
@@ -175,9 +188,4 @@ if __name__ == '__main__':
 
     ion = IonSpecies(name="4He_2+", label=r"$^4\Mathrm{He}^{2+}$", energy_mev=30.0)
 
-    print("Species name {}, label {}".format(ion.name(), ion.label()))
-    print("Energy = {} MeV/amu".format(ion.energy_mev()))
-    print("Relativistic gamma = {}".format(ion.gamma()))
-    print("Relativistic beta = {}".format(ion.beta()))
-    print("B-rho = {} T-m".format(ion.b_rho()))
-    print("B Field for 40 cm radius = {} T".format(ion.b_rho() / 0.4))
+    print(ion)
