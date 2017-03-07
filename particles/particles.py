@@ -26,8 +26,9 @@ presets = {'proton': {'mass_mev': const.value('proton mass energy equivalent in 
 class IonSpecies:
 
     def __init__(self,
-                 label,
+                 name,
                  energy_mev,
+                 label="New Ion Species",
                  mass_mev=None,
                  a=None,
                  z=None,
@@ -36,11 +37,12 @@ class IonSpecies:
 
         """
         Simple ion species class that holds data and can calculate some basic values like rigidity and emergy.
-        :param label: Name of the species, can be one of the presets:
+        :param name: Name of the species, can be one of the presets:
             'protons'
             'H2_1+'
             '4He_2+'
         if it is not a preset, the following four have to be defined as well:
+        :param label: A text label for plotting, can be in latex shorthand
         :param mass_mev:
         :param a:
         :param z:
@@ -49,9 +51,9 @@ class IonSpecies:
         """
 
         # Check if user wants a preset ion species:
-        if label in presets.keys():
+        if name in presets.keys():
 
-            species = presets[label]
+            species = presets[name]
 
             mass_mev = species["mass_mev"]
             z = species["z"]
@@ -59,7 +61,7 @@ class IonSpecies:
             q = species["q"]
 
             if debug:
-                print("Using preset ion species {}:".format(label))
+                print("Using preset ion species '{}' with label '{}':".format(name, label))
                 print("m_0 = {:.2f} MeV/c^2, q = {:.1f} e, E_kin = {:.2f} MeV". format(mass_mev, q, energy_mev))
 
         # If not, check for missing initial values
@@ -69,7 +71,7 @@ class IonSpecies:
 
             if None in init_values:
 
-                print("Sorry, ion species {} was initialized with missing values ('None')!".format(label))
+                print("Sorry, ion species {} was initialized with missing values ('None')!".format(name))
                 print("mass_mev = {}, a = {}, z = {}, q = {}". format(mass_mev, a, z, q))
 
                 exit(1)
@@ -77,85 +79,99 @@ class IonSpecies:
             else:
 
                 if debug:
-                    print("User defined ion species {}:".format(label))
+                    print("User defined ion species {}:".format(name))
                     print("m_0 = {:.2f} MeV/c^2, q = {:.1f} e, E_kin = {:.2f} MeV".format(mass_mev, q, energy_mev))
 
         # Initialize values (default for a proton)
-        self.label = label            # A label for this species
-        self.mass_mev = mass_mev      # Rest Mass (MeV/c^2)
-        self.a = a                    # Mass number A of the ion (amu)
-        self.z = z                    # Proton number Z of the ion (unitless)
-        self.energy_mev = energy_mev  # Initial kinetic energy (MeV/amu)
-        self.q = q                    # charge state
+        self._name = name
+        self._label = label            # A label for this species
+        self._mass_mev = mass_mev      # Rest Mass (MeV/c^2)
+        self._a = a                    # Mass number A of the ion (amu)
+        self._z = z                    # Proton number Z of the ion (unitless)
+        self._energy_mev = energy_mev  # Initial kinetic energy (MeV/amu)
+        self._q = q                    # charge state
 
         # Init other variables, calculate later
-        self.gamma = 0.0
-        self.beta = 0.0
-        self.b_rho = 0.0
-        self.mass_kg = 0.0
+        self._gamma = 0.0
+        self._beta = 0.0
+        self._b_rho = 0.0
+        self._mass_kg = 0.0
 
         # Calculate mass of the particle in kg
-        self.mass_kg = self.mass_mev * echarge * 1.0e6 / clight**2.0
+        self._mass_kg = self._mass_mev * echarge * 1.0e6 / clight**2.0
 
         self.calculate_from_energy_mev()
 
-    @property
+    def energy_mev(self):
+        return self._energy_mev
+
     def q_over_a(self):
-        return self.q / self.a
+        return self._q / self._a
 
-    @property
     def total_kinetic_energy_mev(self):
-        return self.energy_mev * self.a
+        return self._energy_mev * self._a
 
-    @property
     def total_kinetic_energy_ev(self):
-        return self.energy_mev * self.a * 1.0e6
+        return self._energy_mev * self._a * 1.0e6
 
-    @property
     def v_m_per_s(self):
-        return self.beta * clight
+        return self._beta * clight
 
-    @property
     def v_cm_per_s(self):
-        return self.beta * clight * 1.0e2
+        return self._beta * clight * 1.0e2
+
+    def label(self):
+        return self._label
+
+    def name(self):
+        return self._name
+
+    def b_rho(self):
+        return self._b_rho
+
+    def gamma(self):
+        return self._gamma
+
+    def beta(self):
+        return self._beta
 
     def calculate_from_energy_mev(self, energy_mev=None):
 
         if energy_mev is not None:
 
-            self.energy_mev = energy_mev
+            self._energy_mev = energy_mev
 
         # Calculate relativistic parameters
-        self.gamma = self.energy_mev * self.a / self.mass_mev + 1.0
-        self.beta = np.sqrt(1.0 - self.gamma**(-2.0))
+        self._gamma = self._energy_mev * self._a / self._mass_mev + 1.0
+        self._beta = np.sqrt(1.0 - self._gamma**(-2.0))
 
         # Calculate B-rho of the particle
-        self.b_rho = self.beta * self.gamma * self.mass_mev * 1.0e6 / (self.q * clight)
+        self._b_rho = self._beta * self._gamma * self._mass_mev * 1.0e6 / (self._q * clight)
 
     def calculate_from_b_rho(self, b_rho=None):
 
         if b_rho is not None:
 
-            self.b_rho = b_rho
+            self._b_rho = b_rho
 
         # Calculate relativistic parameters from b_rho
-        betagamma = self.b_rho * self.q * clight * 1.0e-6 / self.mass_mev
-        self.gamma = np.sqrt(betagamma**2.0 + 1.0)
-        self.beta = betagamma / self.gamma
+        betagamma = self._b_rho * self._q * clight * 1.0e-6 / self._mass_mev
+        self._gamma = np.sqrt(betagamma**2.0 + 1.0)
+        self._beta = betagamma / self._gamma
 
         # Calculate energy_mev from b_rho (cave: energy_mev is per nucleon)
-        self.energy_mev = self.mass_mev * (self.gamma - 1.0) / self.a
+        self._energy_mev = self._mass_mev * (self._gamma - 1.0) / self._a
 
 
 if __name__ == '__main__':
 
     print("Testing IonSpecies class:")
 
-    ion = IonSpecies(label="4He_2+", energy_mev=30.0)
+    ion = IonSpecies(name="4He_2+", label=r"$^4\Mathrm{He}^{2+}$", energy_mev=30.0)
 
-    print("Species {}".format(ion.label))
-    print("Energy = {} MeV/amu".format(ion.energy_mev))
-    print("Relativistic gamma = {}".format(ion.gamma))
-    print("Relativistic beta = {}".format(ion.beta))
-    print("B-rho = {} T-m".format(ion.b_rho))
-    print("B Field for 40 cm radius = {} T".format(ion.b_rho / 0.4))
+    print("Species name {}, label {}".format(ion.name(), ion.label()))
+    print("Energy = {} MeV/amu".format(ion.energy_mev()))
+    print("Relativistic gamma = {}".format(ion.gamma()))
+    print("Relativistic beta = {}".format(ion.beta()))
+    print("B-rho = {} T-m".format(ion.b_rho()))
+    print("B Field for 40 cm radius = {} T".format(ion.b_rho() / 0.4))
