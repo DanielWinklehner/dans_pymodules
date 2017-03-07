@@ -135,6 +135,12 @@ class IonSpecies:
     def beta(self):
         return self._beta
 
+    def q(self):
+        return self._q
+
+    def a(self):
+        return self._a
+
     def calculate_from_energy_mev(self, energy_mev=None):
 
         if energy_mev is not None:
