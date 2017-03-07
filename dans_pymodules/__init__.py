@@ -1,2 +1,2 @@
-from mycolors import *
 from particles import *
+from mycolors import *
