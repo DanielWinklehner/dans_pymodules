@@ -23,7 +23,7 @@ presets = {'proton': {'mass_mev': const.value('proton mass energy equivalent in 
                       'q': 2.0}}
 
 
-class IonSpecies:
+class IonSpecies(object):
 
     def __init__(self,
                  name,
