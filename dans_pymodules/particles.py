@@ -7,17 +7,26 @@ __doc__ = "Simple class to hold and calculate particle data like energy, mass, c
 # Initialize some global constants
 amu = const.value("atomic mass constant energy equivalent in MeV")
 echarge = const.value("elementary charge")
+emass_mev = const.value("electron mass energy equivalent in MeV")
 clight = const.value("speed of light in vacuum")
 
-presets = {'proton': {'mass_mev': const.value('proton mass energy equivalent in MeV'),
+presets = {'proton': {'label': r"$\mathrm{p}^+$",
+                      'mass_mev': const.value('proton mass energy equivalent in MeV'),
                       'a': 1.007316,
                       'z': 1.0,
                       'q': 1.0},
-           'H2_1+': {'mass_mev': 1876.634889,
+           'electron': {'label': r"$\mathrm{e}^-$",
+                        'mass_mev': const.value('electron mass energy equivalent in MeV'),
+                        'a': 1.0,
+                        'z': 1.0,
+                        'q': -1.0},
+           'H2_1+': {'label': r"$\mathrm{H}_2^+$",
+                     'mass_mev': 1876.634889,
                      'a': 2.0147,
                      'z': 2.0,
                      'q': 1.0},
-           '4He_2+': {'mass_mev': 3727.379378,
+           '4He_2+': {'label': r"$^4\mathrm{He}^{2+}$",
+                      'mass_mev': 3727.379378,
                       'a': 4.0026022,
                       'z': 2.0,
                       'q': 2.0}}
@@ -28,7 +37,7 @@ class IonSpecies(object):
     def __init__(self,
                  name,
                  energy_mev,
-                 label="New Ion Species",
+                 label=None,
                  mass_mev=None,
                  a=None,
                  z=None,
@@ -39,15 +48,16 @@ class IonSpecies(object):
         Simple ion species class that holds data and can calculate some basic values like rigidity and emergy.
         :param name: Name of the species, can be one of the presets:
             'protons'
+            'electrons'
             'H2_1+'
             '4He_2+'
         if it is not a preset, the following four have to be defined as well:
-        :param label: A text label for plotting, can be in latex shorthand
+        :param label: A text label for plotting, can be in latex shorthand, defaults to name.
         :param mass_mev:
         :param a:
         :param z:
         :param q:
-        :param energy_mev:
+        :param energy_mev: Energy in MeV/c^2 has to always be provided.
         """
 
         # Check if user wants a preset ion species:
@@ -56,6 +66,8 @@ class IonSpecies(object):
             species = presets[name]
 
             mass_mev = species["mass_mev"]
+            if label is None:
+                label = species["label"]
             z = species["z"]
             a = species["a"]
             q = species["q"]
@@ -84,7 +96,10 @@ class IonSpecies(object):
 
         # Initialize values (default for a proton)
         self._name = name
-        self._label = label            # A label for this species
+        if label is None:
+            self._label = name
+        else:
+            self._label = label        # A label for this species
         self._mass_mev = mass_mev      # Rest Mass (MeV/c^2)
         self._a = a                    # Mass number A of the ion (amu)
         self._z = z                    # Proton number Z of the ion (unitless)
@@ -105,15 +120,22 @@ class IonSpecies(object):
     def __str__(self):
         return "Ion Species {} with label {}:\n" \
                "M_0 = {} MeV/c^2, q = {}, B-Rho = {},\n" \
-               "E_kin = {} MeV, beta = {}, gamma = {}" \
-               "".format(self._name,
-                         self._label,
-                         self._mass_mev,
-                         self._q,
-                         self._b_rho,
-                         self._energy_mev,
-                         self._beta,
-                         self._gamma)
+               "E_kin = {} MeV, beta = {}, gamma = {}\n" \
+               "(For OPERA: M_0 = {} * M_electron)".format(self._name,
+                                                           self._label,
+                                                           self._mass_mev,
+                                                           self._q,
+                                                           self._b_rho,
+                                                           self._energy_mev,
+                                                           self._beta,
+                                                           self._gamma,
+                                                           self._mass_mev / emass_mev)
+
+    def mass_mev(self):
+        return self._mass_mev
+
+    def mass_kg(self):
+        return self._mass_kg
 
     def energy_mev(self):
         return self._energy_mev
@@ -186,6 +208,6 @@ if __name__ == '__main__':
 
     print("Testing IonSpecies class:")
 
-    ion = IonSpecies(name="4He_2+", label=r"$^4\Mathrm{He}^{2+}$", energy_mev=30.0)
+    ion = IonSpecies(name="4He_2+", energy_mev=30.0)
 
     print(ion)
