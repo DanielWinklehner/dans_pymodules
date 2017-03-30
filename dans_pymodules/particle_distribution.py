@@ -352,7 +352,7 @@ class ParticleDistribution(object):
     def plot_positions_3d(self):
 
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        ax = Axes3D(fig)
 
         ax.scatter(1000.0 * self.x, 1000.0 * self.y, 1000.0 * self.z,
                    s=4.0, edgecolor='none')
