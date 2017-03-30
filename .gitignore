@@ -94,3 +94,6 @@ ENV/
 
 # The PyCharm idea folder
 .idea/
+
+# Test files from pylatex
+Test.*
