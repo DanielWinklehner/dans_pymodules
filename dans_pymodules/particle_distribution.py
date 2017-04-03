@@ -53,9 +53,9 @@ class ParticleDistribution(object):
 
     def boltzmann_velocity(self, boltzmann_energy):
         """
-        Generate random velocity with spherical Boltzmann distribution
+        Generate random velocity with Boltzmann distribution
         This uses the current number of particles.
-        :param boltzmann_energy: in eV
+        :param boltzmann_energy: Temperature (eV)
         :return: 
         """
         if self.debug:
@@ -158,27 +158,27 @@ class ParticleDistribution(object):
         yxp_std = np.mean((self.y - y_mean) * (xp - xp_mean))  # (m * rad)
 
         # Beam edges (m)
-        # x_min_1rms = x_mean - x_std
-        # x_min_2rms = x_mean - 2.0 * x_std
+        x_min_1rms = x_mean - x_std
+        x_min_2rms = x_mean - 2.0 * x_std
         x_min_full = np.min(self.x)
 
-        # x_max_1rms = x_mean + x_std
-        # x_max_2rms = x_mean + 2.0 * x_std
+        x_max_1rms = x_mean + x_std
+        x_max_2rms = x_mean + 2.0 * x_std
         x_max_full = np.max(self.x)
 
-        # y_min_1rms = y_mean - y_std
-        # y_min_2rms = y_mean - 2.0 * y_std
+        y_min_1rms = y_mean - y_std
+        y_min_2rms = y_mean - 2.0 * y_std
         y_min_full = np.min(self.y)
 
-        # y_max_1rms = y_mean + y_std
-        # y_max_2rms = y_mean + 2.0 * y_std
+        y_max_1rms = y_mean + y_std
+        y_max_2rms = y_mean + 2.0 * y_std
         y_max_full = np.max(self.y)
 
         # RMS Emittances (m-rad)
-        e_xxp_1rms = np.sqrt((x_std * xp_std)**2.0 - xxp_std**2.0)
-        e_yyp_1rms = np.sqrt((y_std * yp_std)**2.0 - yyp_std**2.0)
-        e_xyp_1rms = np.sqrt((x_std * yp_std)**2.0 - xyp_std**2.0)
-        e_yxp_1rms = np.sqrt((y_std * xp_std)**2.0 - yxp_std**2.0)
+        e_xxp_1rms = np.sqrt((x_std * xp_std) ** 2.0 - xxp_std ** 2.0)
+        e_yyp_1rms = np.sqrt((y_std * yp_std) ** 2.0 - yyp_std ** 2.0)
+        e_xyp_1rms = np.sqrt((x_std * yp_std) ** 2.0 - xyp_std ** 2.0)
+        e_yxp_1rms = np.sqrt((y_std * xp_std) ** 2.0 - yxp_std ** 2.0)
 
         # Normalized RMS Emittances (m-rad)
         en_xxp_1rms = e_xxp_1rms * self.ion.beta() * self.ion.gamma()
@@ -229,14 +229,15 @@ class ParticleDistribution(object):
         e_yyp_4rms_includes_perc = 100.0 * e_yyp_4rms_includes / self.numpart  # percent
 
         # Maximum emittance by using the RMS Twiss parameters and the maximum values of x, x', y and y'
-        # e_xxp_full = twiss_gamma_x * np.max(self.x) ** 2.0 + 2.0 * twiss_alpha_x * np.max(self.x) * np.max(
-        #     xp) + twiss_beta_x * np.max(xp) ** 2.0
-        # e_yyp_full = twiss_gamma_y * np.max(self.y) ** 2.0 + 2.0 * twiss_alpha_y * np.max(self.y) * np.max(
-        #     yp) + twiss_beta_y * np.max(yp) ** 2.0
+        e_xxp_full = twiss_gamma_x * np.max(self.x) ** 2.0 + 2.0 * twiss_alpha_x * np.max(self.x) * np.max(
+            xp) + twiss_beta_x * np.max(xp) ** 2.0
+        e_yyp_full = twiss_gamma_y * np.max(self.y) ** 2.0 + 2.0 * twiss_alpha_y * np.max(self.y) * np.max(
+            yp) + twiss_beta_y * np.max(yp) ** 2.0
 
         # --- Create a structured array for better postprocessing --- #
         dtype = [('name', 'S20'), ('value', float), ('unit', 'S10')]
 
+        # TODO: Think about units!
         # actual entries
         values = [('# of particles', self.numpart, ''),
                   ('mean velocity', v_mean, 'm/s'),
@@ -289,49 +290,49 @@ class ParticleDistribution(object):
 
             print summary
 
-        # emi = dict(Np=Np,
-        #            VMean=VMean,
-        #            TMean=TMean,
-        #            EXXPRMS=XERms,
-        #            EYYPRMS=YERms,
-        #            EXYPRMS=XYPRms,
-        #            EYXPRMS=YXPRms,
-        #            EXXPNRMS=XENRms,
-        #            EYYPNRMS=YENRms,
-        #            EXYPNRMS=XYPENRms,
-        #            EYXPNRMS=YXPENRms,
-        #            X4RMSINCLUDE=XE4Rms_includes,
-        #            Y4RMSINCLUDE=XE4Rms_includes,
-        #            XMin1rms=XMin1rms,
-        #            XMax1rms=XMax1rms,
-        #            YMin1rms=YMin1rms,
-        #            YMax1rms=YMax1rms,
-        #            XMin2rms=XMin2rms,
-        #            XMax2rms=XMax2rms,
-        #            YMin2rms=YMin2rms,
-        #            YMax2rms=YMax2rms,
-        #            XMinFull=XMinFull,
-        #            XMaxFull=XMaxFull,
-        #            YMinFull=YMinFull,
-        #            YMaxFull=YMaxFull,
-        #            XAlpha=Xalpha,
-        #            XBeta=Xbeta,
-        #            XGamma=Xgamma,
-        #            YAlpha=Yalpha,
-        #            YBeta=Ybeta,
-        #            YGamma=Ygamma,
-        #            XMean=XMean,
-        #            XPMean=XPMean,
-        #            YMean=YMean,
-        #            YPMean=YPMean,
-        #            EXXPMax=EXXPMax,
-        #            EYYPMax=EYYPMax,
-        #            Summary=summary,
-        #            BetaGamma=BetaGamma)
+        emi = {"Np": self.numpart,
+               "VMean": v_mean,
+               "TMean": e_kin_mean,
+               "EXXPRMS": e_xxp_1rms,
+               "EYYPRMS": e_yyp_1rms,
+               "EXYPRMS": e_xyp_1rms,
+               "EYXPRMS": e_yxp_1rms,
+               "EXXPNRMS": en_xxp_1rms,
+               "EYYPNRMS": en_yyp_1rms,
+               "EXYPNRMS": en_xyp_1rms,
+               "EYXPNRMS": en_yxp_1rms,
+               "X4RMSINCLUDE": e_xxp_4rms_includes_perc,
+               "Y4RMSINCLUDE": e_yyp_4rms_includes_perc,
+               "XMin1rms": x_min_1rms,
+               "XMax1rms": x_max_1rms,
+               "YMin1rms": y_min_1rms,
+               "YMax1rms": y_max_1rms,
+               "XMin2rms": x_min_2rms,
+               "XMax2rms": x_max_2rms,
+               "YMin2rms": y_min_2rms,
+               "YMax2rms": y_max_2rms,
+               "XMinFull": x_min_full,
+               "XMaxFull": x_max_full,
+               "YMinFull": y_min_full,
+               "YMaxFull": y_max_full,
+               "XAlpha": twiss_alpha_x,
+               "XBeta": twiss_beta_x,
+               "XGamma": twiss_gamma_x,
+               "YAlpha": twiss_alpha_y,
+               "YBeta": twiss_beta_y,
+               "YGamma": twiss_gamma_y,
+               "XMean": x_mean,
+               "XPMean": xp_mean,
+               "YMean": y_mean,
+               "YPMean": yp_mean,
+               "EXXPMax": e_xxp_full,
+               "EYYPMax": e_yyp_full,
+               "Summary": summary,
+               "BetaGamma": beta_rel * gamma_rel}
 
         results = {'data': emi_array,
                    'summary': summary,
-                   # 'raw_data': emi
+                   'raw_data': emi
                    }
 
         return results
