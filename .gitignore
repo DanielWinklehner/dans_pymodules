@@ -97,3 +97,6 @@ ENV/
 
 # Test files from pylatex
 Test.*
+
+# The modules that have not been transcribed yet
+still_missing/
