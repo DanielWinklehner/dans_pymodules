@@ -30,8 +30,8 @@ class Vector(object):
 
     def __mul__(self, other):
         try:
-            v2 = other.vector
-            return self[0] * v2[0] + self[1] * v2[1]
+
+            return self[0] * other.vector[0] + self[1] * other.vector[1]
 
         except AttributeError:
 
@@ -39,8 +39,8 @@ class Vector(object):
 
     def __rmul__(self, other):
         try:
-            v2 = other.vector
-            return self[0] * v2[0] + self[1] * v2[1]
+
+            return self[0] * other.vector[0] + self[1] * other.vector[1]
 
         except AttributeError:
 
@@ -103,8 +103,18 @@ class Vector(object):
 
         return Vector(vector=np.array([self.vector[1], -self.vector[0]]))
 
-    def angle(self, v2):
+    def angle(self, other):
         """
         Calculate the angle from the present vector to the given second_vector
         """
-        return np.arccos(self * v2 / self.get_length() / v2.get_length())
+        return np.arccos(self * other / self.get_length() / other.get_length())
+
+if __name__ == '__main__':
+    # Test the vector class
+    v1 = Vector(np.array([1, 2]))
+    v2 = Vector(np.array([-1, 2]))
+
+    print(v1 + v2)
+    print(v1 - v2)
+    print(v1 * v2)
+    print(v1.get_length())
