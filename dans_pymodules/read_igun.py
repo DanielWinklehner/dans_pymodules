@@ -50,6 +50,12 @@ class IgunReader(object):
                  filename=None, 
                  resolution=0.25  # polygon units --> mm
                  ):
+        """
+        Function that reads in the values from TRJ file
+        :param filename: 
+        :param resolution: 
+        :return: 
+        """
 
         if filename is None:
             return None
