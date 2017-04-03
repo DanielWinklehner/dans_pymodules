@@ -333,7 +333,7 @@ class MPLCanvasWrapper(Gtk.VBox):
 
         sd = SettingsDialog()
 
-        response, settings = sd.run(parent=None, old_settings=self.get_settings())
+        response, settings = sd.run(parent=self._main_window, old_settings=self.get_settings())
 
         if response == 1:
 
@@ -467,17 +467,21 @@ class MPLCanvasWrapper(Gtk.VBox):
         return 0
 
     # TODO: Unused?
-    # def axes_enter_callback(self, event):
-    #
-    #     x, y = event.xdata, event.ydata
-    #
-    #     return 0
-    #
-    # def axes_leave_callback(self, event):
-    #
-    #     x, y = event.xdata, event.ydata
-    #
-    #     return 0
+    @staticmethod
+    def axes_enter_callback(event):
+
+        x, y = event.xdata, event.ydata
+        del x, y
+
+        return 0
+
+    @staticmethod
+    def axes_leave_callback(event):
+
+        x, y = event.xdata, event.ydata
+        del x, y
+
+        return 0
 
     def button_pressed(self, event):
         """
@@ -1294,12 +1298,11 @@ class MPLCanvasWrapper(Gtk.VBox):
 
         return 0
 
-    def __init__(self, main_window=None, nbp=None):
+    def __init__(self, main_window=None, nbp=0):
 
         Gtk.VBox.__init__(self)
 
-        if main_window is not None:
-            self._main_window = main_window
+        self._main_window = main_window
 
         self.figure = Figure(facecolor='#474747', edgecolor='#474747')
         self.canvas = FigureCanvasGTK3Agg(self.figure)  # a Gtk.DrawingArea
@@ -1411,7 +1414,7 @@ class TestWindow(object):
         window.set_title("MPLCanvasWrapper TestWindow")
         window.set_size_request(600, 600)
         window.connect("destroy", self.destroy)
-        self.canvas = MPLCanvasWrapper()
+        self.canvas = MPLCanvasWrapper(main_window=window)
         window.add(self.canvas)
         self.test_function(self.canvas.axis)
         self.canvas.set_autoscale(True)
