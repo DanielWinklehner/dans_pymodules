@@ -117,13 +117,6 @@ class SettingsDialog(object):
 
         self.settings = None
 
-    # TODO?
-    # def add_legend_entry(self, table, row, entry="", l_ms=1, l_lw=1, l_flag=True):
-    #     """
-    #     """
-    #
-    #     return 0
-
     def deactivate_autoscale_x(self, *_):
         """
         """
