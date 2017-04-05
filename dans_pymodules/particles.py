@@ -141,7 +141,16 @@ class IonSpecies(object):
         return self._energy_mev
 
     def q_over_a(self):
+        """
+        :return: charge state - to - mass number ratio (unitless) 
+        """
         return self._q / self._a
+
+    def q_over_m(self):
+        """
+        :return: charge - to - mass ratio (C/kg) 
+        """
+        return self._q * echarge / self._mass_kg
 
     def total_kinetic_energy_mev(self):
         return self._energy_mev * self._a
