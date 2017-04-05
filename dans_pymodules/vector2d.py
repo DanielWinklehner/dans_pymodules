@@ -4,7 +4,7 @@ __author__ = "Daniel Winklehner"
 __doc__ = "Simple 2D vector class covering basic vector operations."
 
 
-class Vector(object):
+class Vector2D(object):
     """
     Simple 2D vector class covering basic vector operations
     """
@@ -14,10 +14,10 @@ class Vector(object):
         Constructor
         """
         if p0 is not None and p1 is not None:
-            assert len(p0) == 2 and len(p1) == 2
+            assert len(p0) == 2 and len(p1) == 2, "Both points have to have dimension 2 for 2D Vector!"
             self.vector = np.array(p1, 'd') - np.array(p0, 'd')
         else:
-            assert len(vector) == 2
+            assert len(vector) == 2, "Length has to be 2 for 2D Vector!"
             self.vector = np.array(vector, 'd')
 
         self.length = self.get_length()
@@ -35,7 +35,7 @@ class Vector(object):
 
         except AttributeError:
 
-            return Vector(vector=(self.vector * other))
+            return Vector2D(vector=(self.vector * other))
 
     def __rmul__(self, other):
         try:
@@ -44,18 +44,18 @@ class Vector(object):
 
         except AttributeError:
 
-            return Vector(vector=(self.vector * other))
+            return Vector2D(vector=(self.vector * other))
 
     def __div__(self, other):
-        return Vector(vector=(self.vector / other))
+        return Vector2D(vector=(self.vector / other))
 
     def __rdiv__(self, other):
-        return Vector(vector=(other / self.vector))
+        return Vector2D(vector=(other / self.vector))
 
     def __add__(self, other):
         try:
 
-            return Vector(vector=(self.vector + other.vector))
+            return Vector2D(vector=(self.vector + other.vector))
 
         except AttributeError:
 
@@ -64,7 +64,7 @@ class Vector(object):
     def __radd__(self, other):
         try:
 
-            return Vector(vector=(self.vector + other.vector))
+            return Vector2D(vector=(self.vector + other.vector))
 
         except AttributeError:
 
@@ -73,7 +73,7 @@ class Vector(object):
     def __sub__(self, other):
         try:
 
-            return Vector(vector=(self.vector - other.vector))
+            return Vector2D(vector=(self.vector - other.vector))
 
         except AttributeError:
 
@@ -82,7 +82,7 @@ class Vector(object):
     def __rsub__(self, other):
         try:
 
-            return Vector(vector=(other.vector - self.vector))
+            return Vector2D(vector=(other.vector - self.vector))
 
         except AttributeError:
 
@@ -93,15 +93,15 @@ class Vector(object):
 
     def normalize(self):
 
-        return Vector(vector=(self.vector / self.length))
+        return Vector2D(vector=(self.vector / self.length))
 
     def rotate_ccw(self):
 
-        return Vector(vector=np.array([-self.vector[1], self.vector[0]]))
+        return Vector2D(vector=np.array([-self.vector[1], self.vector[0]]))
 
     def rotate_cw(self):
 
-        return Vector(vector=np.array([self.vector[1], -self.vector[0]]))
+        return Vector2D(vector=np.array([self.vector[1], -self.vector[0]]))
 
     def angle(self, other):
         """
@@ -111,8 +111,8 @@ class Vector(object):
 
 if __name__ == '__main__':
     # Test the vector class
-    v1 = Vector(np.array([1, 2]))
-    v2 = Vector(np.array([-1, 2]))
+    v1 = Vector2D(np.array([1, 2]))
+    v2 = Vector2D(np.array([-1, 2]))
 
     print(v1 + v2)
     print(v1 - v2)
