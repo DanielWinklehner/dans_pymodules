@@ -137,6 +137,9 @@ class IonSpecies(object):
     def mass_kg(self):
         return self._mass_kg
 
+    def mass_opera(self):
+        return self.mass_mev() / emass_mev
+
     def energy_mev(self):
         return self._energy_mev
 
@@ -217,6 +220,7 @@ if __name__ == '__main__':
 
     print("Testing IonSpecies class:")
 
-    ion = IonSpecies(name="4He_2+", energy_mev=30.0)
+    ion = IonSpecies(name="H2_1+", energy_mev=0.03499)
 
     print(ion)
+    print("Accelerating Voltage = {} V".format(1.0e6 * ion.energy_mev() * ion.a() / ion.q()))
