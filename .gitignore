@@ -100,3 +100,5 @@ Test.*
 
 # The modules that have not been transcribed yet
 still_missing/
+/dans_pymodules/test_fieldmaps/plate_capacitor.res
+/dans_pymodules/test_fieldmaps/plate_capacitor.op3
