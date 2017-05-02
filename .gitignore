@@ -102,3 +102,4 @@ Test.*
 still_missing/
 /dans_pymodules/test_fieldmaps/plate_capacitor.res
 /dans_pymodules/test_fieldmaps/plate_capacitor.op3
+/dans_pymodules/test_fieldmaps/opera_logs/
