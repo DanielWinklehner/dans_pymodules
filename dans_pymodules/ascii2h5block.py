@@ -3,7 +3,7 @@ import numpy as np
 
 
 class TableToH5(object):
-    def __init__(self, spacing, r_min, r_max, _output_dir=None, filename='my_h5'):
+    def __init__(self, spacing, r_min, r_max, filename='my_h5'):
 
         self.spacing = spacing
         self.r_min = r_min
@@ -44,9 +44,9 @@ class TableToH5(object):
         for i in range(self._size[2]):
             for j in range(self._size[1]):
                 for k in range(self._size[0]):
-                    self.data["ex"][i, j, k] = _ex[i + j * self._size[2] + k * self._size[2] * self._size[1]] * 1e-4
-                    self.data["ey"][i, j, k] = _ey[i + j * self._size[2] + k * self._size[2] * self._size[1]] * 1e-4
-                    self.data["ez"][i, j, k] = _ez[i + j * self._size[2] + k * self._size[2] * self._size[1]] * 1e-4
+                    self.data["ex"][k, j, i] = _ex[k + j * self._size[2] + i * self._size[2] * self._size[1]] * 1e-4
+                    self.data["ey"][k, j, i] = _ey[k + j * self._size[2] + i * self._size[2] * self._size[1]] * 1e-4
+                    self.data["ez"][k, j, i] = _ez[k + j * self._size[2] + i * self._size[2] * self._size[1]] * 1e-4
                     # self.data["hx"][i, j, k] = _hx[i + j * self._size[2] + k * self._size[2] * self._size[1]] * 1e-3
                     # self.data["hy"][i, j, k] = _hy[i + j * self._size[2] + k * self._size[2] * self._size[1]] * 1e-3
                     # self.data["hz"][i, j, k] = _hz[i + j * self._size[2] + k * self._size[2] * self._size[1]] * 1e-3
@@ -103,5 +103,5 @@ if __name__ == '__main__':
 
     my_h5 = TableToH5(spacing=spacing, r_min=r_min, r_max=r_max, filename=filename)
     my_h5.set_data()
-    # my_h5._set_uniform_bfield(tesla=1.041684)
+    my_h5._set_uniform_bfield(tesla=1.041684)
     my_h5.generate()
