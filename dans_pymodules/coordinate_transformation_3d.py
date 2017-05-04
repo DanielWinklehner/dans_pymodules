@@ -17,7 +17,7 @@ class TransformationMatrix(object):
         else:
             self.matrix = np.eye(3, 3)
 
-        self.epsilon = 1.0e-20  # Small value to test for identities
+        self.epsilon = 1.0e-15  # Small value to test for identities
 
     def matrix_from_vectors(self, _u, _v, _w, normalized=False):
         """
