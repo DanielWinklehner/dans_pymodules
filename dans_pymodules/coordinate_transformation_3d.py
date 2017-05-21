@@ -77,4 +77,4 @@ if __name__ == '__main__':
     v2 = [1, 2, 3]
 
     # noinspection PyTypeChecker
-    print mat * v2
+    print(mat * v2)

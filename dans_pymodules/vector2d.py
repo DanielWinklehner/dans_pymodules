@@ -68,7 +68,7 @@ class Vector2D(object):
 
         except AttributeError:
 
-            print ("Can only add and subtract vectors from vectors!")
+            print("Can only add and subtract vectors from vectors!")
 
     def __sub__(self, other):
         try:
@@ -86,7 +86,7 @@ class Vector2D(object):
 
         except AttributeError:
 
-            print ("Can only add and subtract vectors from vectors!")
+            print("Can only add and subtract vectors from vectors!")
 
     def get_length(self):
         return np.sqrt(self.vector[0] ** 2.0 + self.vector[1] ** 2.0)

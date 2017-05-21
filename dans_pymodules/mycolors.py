@@ -1,7 +1,7 @@
 __author__ = "Daniel Winklehner"
 
 
-class MyColors:
+class MyColors(object):
 
     def __init__(self):
         """

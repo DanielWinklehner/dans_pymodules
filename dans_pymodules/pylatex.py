@@ -67,7 +67,7 @@ class Object:
 
         else:
 
-            print "Already part of a section, doing nothing"
+            print("Already part of a section, doing nothing")
             return 1
 
 

@@ -22,8 +22,8 @@ def read_igun(filename, npart=5000):
     ir.read_trj(filename)
 
     e_rrp, e_xxp = ir.get_emittance()
-    print e_rrp, "mm-mrad"
-    print e_xxp, "mm-mrad"
+    print("rrp: {} mm-mrad".format(e_rrp))
+    print("xxp: {} mm-mrad".format(e_xxp))
 
     return ir.generate_dist(npart=npart)
 
@@ -222,9 +222,9 @@ class IgunReader(object):
                         jmin = jmid
                         jmid = int((jmin + jmax) / 2)
                     else:
-                        print "%s: probability %g of out boundaries cumulative[%d] = %g - cumulative[%d] = %g\n" % \
-                              (os.path.split(sys.argv[0])[1], probability, jmin,
-                               cumulative[jmin], jmax, cumulative[jmax])
+                        print("{}: probability {} of out boundaries cumulative[{}] = {} - cumulative[{}] = {}\n".format(
+                            os.path.split(sys.argv[0])[1], probability, jmin,
+                            cumulative[jmin], jmax, cumulative[jmax]))
 
                 jmid -= 1
 
@@ -304,8 +304,8 @@ if __name__ == '__main__':
         opf = None
 
     if ipf is None or opf is None:
-        print "Error: Either inputfile or outputfile not specified!"
-        print "Usage: 'ReadIGUN.py -i <INPUT FILE> -o <OUTPUT FILE> [-p <# of particles to calculate>]'"
+        print("Error: Either inputfile or outputfile not specified!")
+        print("Usage: 'ReadIGUN.py -i <INPUT FILE> -o <OUTPUT FILE> [-p <# of particles to calculate>]'")
         raise SystemExit
 
     # Call the main script

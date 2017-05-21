@@ -1,6 +1,10 @@
 import numpy as np
 from scipy import constants as const
-from particles import IonSpecies
+import sys
+if sys.version_info >= (3, 0):  # nopep8
+    from .particles import IonSpecies
+else:  # nopep8
+    from particles import IonSpecies
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
@@ -288,7 +292,7 @@ class ParticleDistribution(object):
 
         if self.debug:
 
-            print summary
+            print(summary)
 
         emi = {"Np": self.numpart,
                "VMean": v_mean,

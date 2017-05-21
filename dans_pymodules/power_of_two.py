@@ -13,7 +13,7 @@ def power_of_two(number):
 
         res = number % 2
         number /= 2.0
-        print "res", res, "data", number
+        print("res: {}, data: {}".format(res, number))
 
         if number == 1 and res == 0:
 
