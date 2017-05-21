@@ -54,6 +54,7 @@ class TableToH5(object):
     def generate(self):
 
         # Create the zeroth step and the Block inside of it
+        self.h5_file.attrs.__setitem__("Resonance Frequency(Hz)", np.array([49200000.0]))
         step0 = self.h5_file.create_group("Step#0")
         block = step0.create_group("Block")
 
@@ -88,20 +89,95 @@ class TableToH5(object):
         # Set the magnetic field in the "hz" direction
         if tesla is not None:
             self.data["hz"][:, :, :] = tesla * 10.0
+
+        elif kgauss is not None:
+            self.data["hz"][:, :, :] = kgauss
+
+
+class createBFieldMap(object):
+    def __init__(self, spacing, r_min, r_max, filename='dummy_field'):
+        self.spacing = spacing
+        self.r_min = r_min
+        self.r_max = r_max
+        self.filename = filename
+
+        # Create a new h5 file
+        self.h5_file = h5py.File(filename + '.h5part', )
+
+        # Calculates the size of data arrays
+        # noinspection PyTypeChecker
+        self._size = np.array((r_max - r_min) / spacing + 1, int)
+
+        # Initialize the h5 data
+        # Data Format:
+        # Dictionary with keys "ex", "ey", "ez", "hx", "hy", and "hz", which correspond to the vector components
+        # of the electric field and the H field.
+        self.data = {"ex": np.zeros(self._size),
+                     "ey": np.zeros(self._size),
+                     "ez": np.zeros(self._size),
+                     "hx": np.zeros(self._size),
+                     "hy": np.zeros(self._size),
+                     "hz": np.zeros(self._size)}
+
+    def generate(self):
+
+        # Create the zeroth step and the Block inside of it
+        self.h5_file.attrs.__setitem__("Resonance Frequency(Hz)", np.array([49200000.0]))
+        step0 = self.h5_file.create_group("Step#0")
+        block = step0.create_group("Block")
+
+        # Create the E Field group
+        e_field = block.create_group("Efield")
+
+        # Store the x, y, and z data for the E Field
+        e_field.create_dataset("0", data=self.data["ex"])
+        e_field.create_dataset("1", data=self.data["ey"])
+        e_field.create_dataset("2", data=self.data["ez"])
+
+        # Set the spacing and origin attributes for the E Field group
+        e_field.attrs.__setitem__("__Spacing__", self.spacing)
+        e_field.attrs.__setitem__("__Origin__", self.r_min)
+
+        # Create the H Field group
+        h_field = block.create_group("Hfield")
+
+        # Store the x, y, and z data points for the H Fiend
+        h_field.create_dataset("0", data=self.data["hx"])
+        h_field.create_dataset("1", data=self.data["hy"])
+        h_field.create_dataset("2", data=self.data["hz"])
+
+        # Set the spacing and origin attributes for the H Field group
+        h_field.attrs.__setitem__("__Spacing__", self.spacing)
+        h_field.attrs.__setitem__("__Origin__", self.r_min)
+
+        # Close the file
+        self.h5_file.close()
+
+    def _set_uniform_bfield(self, tesla=None, kgauss=None):
+        # Set the magnetic field in the "hz" direction
+        if tesla is not None:
+            self.data["hz"][:, :, :] = tesla * 10.0
+
         elif kgauss is not None:
             self.data["hz"][:, :, :] = kgauss
 
 
 if __name__ == '__main__':
     # Spacing and origin attributes
-    spacing = np.array([20.0, 20.0, 20.0])
-    r_min = np.array([-100.0, -100.0, -100.0])
-    r_max = np.array([100.0, 100.0, 100.0])
+    # spacing = np.array([20.0, 20.0, 20.0])
+    # r_min = np.array([-100.0, -100.0, -100.0])
+    # r_max = np.array([100.0, 100.0, 100.0])
+
+    spacing = np.array([1.0, 1.0, 1.0])
+    r_min = np.array([-100.0, -100.0, -120.0])
+    r_max = np.array([100.0, 100.0, 50.0])
+    filename = '/home/philip/work/field_maps/si_efield_84keV_16kV'
 
     # Assumes that the .table filename is the same as the filename you want to save the h5 to.
-    filename = '/home/philip/src/dans_pymodules/dans_pymodules/test_fieldmaps/plate_capacitor_11x11x11_test'
+    # filename = '/home/philip/src/dans_pymodules/dans_pymodules/test_fieldmaps/plate_capacitor_11x11x11_test'
 
     my_h5 = TableToH5(spacing=spacing, r_min=r_min, r_max=r_max, filename=filename)
     my_h5.set_data()
+    # my_h5 = createBFieldMap(spacing, r_min, r_max, filename=filename)
     my_h5._set_uniform_bfield(tesla=1.041684)
     my_h5.generate()
