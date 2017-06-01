@@ -12,9 +12,13 @@ if sys.version_info >= (3, 2):
     from .coordinate_transformation_3d import *
 
     try:
-        from .filedialog import *
-        from .label_combo import *
-        from .mpl_canvas_wrapper import *
+
+        # TODO: This creates Gtk conflicts
+        pass
+        # from .filedialog import *
+        # from .label_combo import *
+        # from .mpl_canvas_wrapper import *
+
     except ModuleNotFoundError:
         print("GObject Intropection not found, filedialog, label_combo, and mpl_canvas_wrapper not available!")
 
