@@ -188,6 +188,17 @@ class IonSpecies(object):
     def a(self):
         return self._a
 
+    def calculate_from_momentum_betagamma(self, momentum_bega=None):
+
+        if momentum_bega is not None:
+            self._gamma = np.sqrt(momentum_bega**2.0 + 1.0)
+            self._beta = momentum_bega / self._gamma
+
+        self._energy_mev = (self._gamma - 1.0) * self._mass_mev / self._a
+
+        # Calculate B-rho of the particle
+        self._b_rho = self._beta * self._gamma * self._mass_mev * 1.0e6 / (self._q * clight)
+
     def calculate_from_energy_mev(self, energy_mev=None):
 
         if energy_mev is not None:
