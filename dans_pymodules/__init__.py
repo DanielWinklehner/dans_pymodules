@@ -1,5 +1,35 @@
 import sys
 
+_gui_libs = []
+
+try:
+
+    import gi
+
+    _gui_libs.append("gi")
+
+except Exception as e:
+    print("import dans_pymodules: Exception caught when trying to import gi: {}".format(e))
+    print("label_combo, and mpl_canvas_wrapper will not be available!")
+
+try:
+
+    import PyQt5
+
+    _gui_libs.append("qt")
+
+except Exception as e:
+    print("import dans_pymodules: Exception caught when trying to import PyQt5: {}".format(e))
+
+try:
+
+    import tkinter
+
+    _gui_libs.append("tk")
+
+except Exception as e:
+    print("import dans_pymodules: Exception caught when trying to import tkinter: {}".format(e))
+
 if sys.version_info >= (3, 2):
 
     from .particles import *
@@ -11,27 +41,23 @@ if sys.version_info >= (3, 2):
     from .power_of_two import power_of_two
     from .coordinate_transformation_3d import *
 
-    try:
+    if "gi" in _gui_libs:
+        from .filedialog_gtk import *
+        from .label_combo import *
+        from .mpl_canvas_wrapper import *
 
-        # TODO: This creates Gtk conflicts
-        pass
-        # from .filedialog import *
-        # from .label_combo import *
-        # from .mpl_canvas_wrapper import *
-
-    except ModuleNotFoundError:
-        print("GObject Intropection not found, filedialog, label_combo, and mpl_canvas_wrapper not available!")
-
-elif sys.version_info == (2, 7):
+elif sys.version_info < (3, 0):
 
     from particles import *
     from mycolors import *
-    from filedialog import *
     from pylatex import *
     from particle_distribution import *
-    from label_combo import *
-    from mpl_canvas_wrapper import *
     from vector2d import *
     from read_igun import *
-    from power_of_two import power_of_two
+    from power_of_two import *
     from coordinate_transformation_3d import *
+
+    if "gi" in _gui_libs:
+        from filedialog_gtk import *
+        from label_combo import *
+        from mpl_canvas_wrapper import *
