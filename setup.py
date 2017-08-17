@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='dans_pymodules',
-      version='3.8',
+      version='3.9',
       description='Useful little modules that I likely need in more than one application',
       url='https://github.com/DanielWinklehner/dans_pymodules',
       author='Daniel Winklehner, Philip Weigel',
