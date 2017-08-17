@@ -17,7 +17,7 @@ try:
 except Exception as e:
     print("import dans_pymodules: Exception caught when trying to import PyQt5: {}".format(e))
 
-if sys.version_info >= (3, 2):
+if sys.version_info >= (3, 0):
 
     from .particles import *
     from .mycolors import *

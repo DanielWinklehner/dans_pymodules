@@ -26,7 +26,6 @@ class FileDialog(object):
 
     def get_filename(self, action='open', old_path=None, icon=None, parent=None):
 
-        # If there is no parent given (i.e. the Chooser is called on its own) we create an empty main window
         self._parent = parent
         self._icon = icon
         self._root = Tk()
@@ -38,9 +37,10 @@ class FileDialog(object):
             myfiledialog = filedialog
 
         if action == 'open':
-            # --- py2:
+
             self._filename = myfiledialog.askopenfilename(initialdir=old_path,
-                                                          title='Open file...')
+                                                          title='Open file...',
+                                                          parent=self._root)
         elif action == 'save':
 
             self._filename = myfiledialog.asksaveasfilename(initialdir=old_path,
@@ -56,6 +56,8 @@ class FileDialog(object):
         else:
 
             raise Exception("'action' must be 'open', 'save', 'savefig', or 'folder' (got '%s')" % action)
+
+        self._root.destroy()
 
         if self._filename == "":
             self._filename = None
