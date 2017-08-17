@@ -17,7 +17,7 @@ try:
 except Exception as e:
     print("import dans_pymodules: Exception caught when trying to import PyQt5: {}".format(e))
 
-if sys.version_info >= (3, 0):
+if sys.version_info.major == 3:
 
     from .particles import *
     from .mycolors import *
@@ -47,7 +47,7 @@ if sys.version_info >= (3, 0):
         from .label_combo import *
         from .mpl_canvas_wrapper import *
 
-elif sys.version_info < (3, 0):
+elif sys.version_info.major == 2:
 
     from particles import *
     from mycolors import *
@@ -76,3 +76,6 @@ elif sys.version_info < (3, 0):
     if "gi" in _gui_libs:
         from label_combo import *
         from mpl_canvas_wrapper import *
+
+else:
+    raise Exception("This version of python is not supported!")

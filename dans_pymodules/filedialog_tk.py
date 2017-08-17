@@ -1,12 +1,14 @@
 import sys
-if sys.version_info >= (3, 0):
+if sys.version_info.major == 3:
     from tkinter import filedialog
     from tkinter import *
     py_ver = 3
-else:
+elif sys.version_info.major == 2:
     from Tkinter import *
-    import Tkinter, Tkconstants, tkFileDialog
+    import tkFileDialog
     py_ver = 2
+else:
+    raise Exception("This version of python is not recognized!")
 
 __author__ = "Daniel Winklehner"
 __doc__ = """A wrapper around tkinter filedialogs.
