@@ -1,7 +1,7 @@
 from scipy.interpolate import RegularGridInterpolator
 import gc
-# import numpy as np
-# import os
+import numpy as np
+import os
 from .filedialog import *
 
 __author__ = "Daniel Winklehner"

@@ -65,7 +65,7 @@ class ParticlePusher(object):
         epsilon = 0.5 * self._ion.q_over_m() * b_norm * _dt
         mat_p = np.eye(3) + epsilon * rot_mat
         mat_m_inv = np.linalg.inv(np.eye(3) - epsilon * rot_mat)
-        _v = np.matmul(np.matmul(mat_m_inv, mat_p), v) + np.matmul(mat_m_inv, _efield) * self._ion.q_over_m() * _dt
+        _v = np.matmul(np.matmul(mat_m_inv, mat_p), _v) + np.matmul(mat_m_inv, _efield) * self._ion.q_over_m() * _dt
 
         return _v
 

@@ -28,6 +28,8 @@ if sys.version_info.major == 3:
     from .read_igun import *
     from .power_of_two import power_of_two
     from .coordinate_transformation_3d import *
+    from .field import *
+    from .particle_pusher import *
 
     try:
         import tkinter
@@ -58,6 +60,8 @@ elif sys.version_info.major == 2:
     from read_igun import *
     from power_of_two import *
     from coordinate_transformation_3d import *
+    from field import *
+    from particle_pusher import *
 
     try:
         import Tkinter
