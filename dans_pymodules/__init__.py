@@ -4,6 +4,7 @@ _gui_libs = []
 
 try:
     import gi
+    gi.require_version('Gtk', '3.0')  # nopep8
     _gui_libs.append("gi")
 
 except Exception as e:
