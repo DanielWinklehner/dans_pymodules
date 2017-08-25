@@ -1,7 +1,8 @@
 from setuptools import setup
+# from Cython.Build import cythonize
 
 setup(name='dans_pymodules',
-      version='4.3',
+      version='4.4',
       description='Useful little modules that I likely need in more than one application',
       url='https://github.com/DanielWinklehner/dans_pymodules',
       author='Daniel Winklehner, Philip Weigel',
@@ -10,4 +11,6 @@ setup(name='dans_pymodules',
       packages=['dans_pymodules'],
       package_data={'': ['PlotSettingsDialog.glade', 'header.tex', 'fishfinder.png', 'vitruvian.jpg']},
       include_package_data=True,
-      zip_safe=False)
+      zip_safe=False,
+      # ext_modules=cythonize("dans_pymodules/particle_pusher.pyx")
+      )

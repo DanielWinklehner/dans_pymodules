@@ -40,7 +40,11 @@ class ParticlePusher(object):
 
         return self._algorithm
 
-    def _v_boris(self, _v, _efield, _bfield, _dt):
+    def _v_boris(self,
+                 _v,
+                 _efield,
+                 _bfield,
+                 _dt):
 
         t = 0.5 * self._ion.q_over_m() * _bfield * _dt
         s = 2.0 * t / (1.0 + np.linalg.norm(t) ** 2.0)
@@ -69,7 +73,12 @@ class ParticlePusher(object):
 
         return _v
 
-    def push(self, _r, _v, _efield, _bfield, _dt):
+    def push(self,
+             _r,
+             _v,
+             _efield,
+             _bfield,
+             _dt):
 
         _v = self._v(_v, _efield, _bfield, _dt)  # Call the velocity function determined by the algorithm
         _r += _v * _dt
