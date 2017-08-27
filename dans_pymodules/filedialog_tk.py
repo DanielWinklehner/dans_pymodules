@@ -9,6 +9,7 @@ elif sys.version_info.major == 2:
     py_ver = 2
 else:
     raise Exception("This version of python is not recognized!")
+import os
 
 __author__ = "Daniel Winklehner"
 __doc__ = """A wrapper around tkinter filedialogs.
@@ -53,7 +54,10 @@ class FileDialog(object):
             # TODO: savefig should have a checkbutton to switch on latex rendering
         elif action == 'folder':
             self._filename = myfiledialog.askdirectory(initialdir=old_path,
-                                                       title='Select folder...')
+                                                       title='Select folder (manually write new one in path string)')
+
+            if self._filename is not None:
+                os.makedirs(self._filename)
             # TODO: folder should have a checkbutton to switch on going into subdirs
         else:
 
