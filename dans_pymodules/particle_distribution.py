@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import constants as const
 import sys
-if sys.version_info >= (3, 0):  # nopep8
+if sys.version_info.major == 3:  # nopep8
     from .particles import IonSpecies
 else:  # nopep8
     from particles import IonSpecies
