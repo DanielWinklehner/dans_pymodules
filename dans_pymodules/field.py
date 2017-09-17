@@ -134,11 +134,15 @@ class Field(object):
 
         if len(pts) == 1:
 
-            return self._scaling * np.array([self._field["x"], self._field["y"], self._field["z"]])
+            return self._scaling * np.array([self._field["x"],
+                                             self._field["y"],
+                                             self._field["z"]])
 
         else:
 
-            return self._scaling * np.ones(pts.shape) * np.array([self._field["x"], self._field["y"], self._field["z"]])
+            return self._scaling * self._field["x"] * np.ones(len(pts)), \
+                   self._scaling * self._field["y"] * np.ones(len(pts)), \
+                   self._scaling * self._field["z"] * np.ones(len(pts))
 
     def _get_field_1d(self, pts):
 
