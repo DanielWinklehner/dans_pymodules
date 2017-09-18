@@ -56,7 +56,7 @@ class FileDialog(object):
             self._filename = myfiledialog.askdirectory(initialdir=old_path,
                                                        title='Select folder (manually write new one in path string)')
 
-            if self._filename is not None and not os.path.exists(self._filename):
+            if self._filename is not None and not os.path.exists(self._filename) and self._filename != '':
                 os.makedirs(self._filename)
             # TODO: folder should have a checkbutton to switch on going into subdirs
         else:
