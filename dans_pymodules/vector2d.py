@@ -109,6 +109,7 @@ class Vector2D(object):
         """
         return np.arccos(self * other / self.get_length() / other.get_length())
 
+
 if __name__ == '__main__':
     # Test the vector class
     v1 = Vector2D(np.array([1, 2]))
