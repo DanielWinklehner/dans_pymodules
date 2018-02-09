@@ -12,17 +12,17 @@ clight = const.value("speed of light in vacuum")
 
 presets = {'proton': {'label': r"$\mathrm{p}^+$",
                       'mass_mev': const.value('proton mass energy equivalent in MeV'),
-                      'a': 1.007316,
+                      'a': 1.00727647,
                       'z': 1.0,
                       'q': 1.0},
            'electron': {'label': r"$\mathrm{e}^-$",
                         'mass_mev': const.value('electron mass energy equivalent in MeV'),
-                        'a': 1.0,
-                        'z': 1.0,
+                        'a': const.value('electron mass energy equivalent in MeV')/amu,
+                        'z': 0.0,
                         'q': -1.0},
            'H2_1+': {'label': r"$\mathrm{H}_2^+$",
                      'mass_mev': 1876.634889,
-                     'a': 2.0147,
+                     'a': 2.01510,
                      'z': 2.0,
                      'q': 1.0},
            '4He_2+': {'label': r"$^4\mathrm{He}^{2+}$",
@@ -74,7 +74,7 @@ class IonSpecies(object):
 
             if debug:
                 print("Using preset ion species '{}' with label '{}':".format(name, label))
-                print("m_0 = {:.2f} MeV/c^2, q = {:.1f} e, E_kin = {:.2f} MeV". format(mass_mev, q, energy_mev))
+                print("m_0 = {:.2f} MeV/c^2, q = {:.1f} e, E_kin = {:.2f} MeV/amu". format(mass_mev, q, energy_mev))
 
         # If not, check for missing initial values
         else:
@@ -120,7 +120,7 @@ class IonSpecies(object):
     def __str__(self):
         return "Ion Species {} with label {}:\n" \
                "M_0 = {} MeV/c^2, q = {}, B-Rho = {},\n" \
-               "E_kin = {} MeV, beta = {}, gamma = {}\n" \
+               "E_kin = {} MeV/amu, beta = {}, gamma = {}\n" \
                "(For OPERA: M_0 = {} * M_electron)".format(self._name,
                                                            self._label,
                                                            self._mass_mev,

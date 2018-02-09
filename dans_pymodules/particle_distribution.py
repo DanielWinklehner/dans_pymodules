@@ -239,13 +239,13 @@ class ParticleDistribution(object):
             yp) + twiss_beta_y * np.max(yp) ** 2.0
 
         # --- Create a structured array for better postprocessing --- #
-        dtype = [('name', 'S20'), ('value', float), ('unit', 'S10')]
+        dtype = [('name', np.unicode_, 20), ('value', float), ('unit', np.unicode_, 10)]
 
         # TODO: Think about units!
         # actual entries
         values = [('# of particles', self.numpart, ''),
                   ('mean velocity', v_mean, 'm/s'),
-                  ('mean energy', e_kin_mean, 'keV'),
+                  ('mean energy', e_kin_mean, 'MeV'),
                   ('x-dia 1-rms', 2000.0 * x_std, 'mm'),
                   ('y-dia 1-rms', 2000.0 * y_std, 'mm'),
                   ('x-dia 2-rms', 4000.0 * x_std, 'mm'),
@@ -383,6 +383,7 @@ class ParticleDistribution(object):
 
         if plot:
             self.plot_positions_3d()
+
 
 if __name__ == '__main__':
     # Test the emittance calculation
