@@ -42,6 +42,7 @@ class IonSpecies(object):
                  a=None,
                  z=None,
                  q=None,
+                 current=1e-36,
                  debug=False):
 
         """
@@ -57,6 +58,7 @@ class IonSpecies(object):
         :param a:
         :param z:
         :param q:
+        :param current: beam current (initialized as very small number if not given)
         :param energy_mev: Energy in MeV/c^2 has to always be provided.
         """
 
@@ -105,6 +107,7 @@ class IonSpecies(object):
         self._z = z                    # Proton number Z of the ion (unitless)
         self._energy_mev = energy_mev  # Initial kinetic energy (MeV/amu)
         self._q = q                    # charge state
+        self._current = current        # beam current in A
 
         # Init other variables, calculate later
         self._gamma = 0.0
@@ -130,6 +133,12 @@ class IonSpecies(object):
                                                            self._beta,
                                                            self._gamma,
                                                            self._mass_mev / emass_mev)
+
+    def current(self):
+        """
+        :return: beam current in A
+        """
+        return self._current
 
     def mass_mev(self):
         return self._mass_mev

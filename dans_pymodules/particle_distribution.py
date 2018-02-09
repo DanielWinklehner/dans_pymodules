@@ -55,6 +55,13 @@ class ParticleDistribution(object):
 
         self.numpart = len(self.x)
 
+        self.xm = None
+        self.ym = None
+        self.xpm = None
+        self.ypm = None
+
+        self.calculate_emittances()
+
     def boltzmann_velocity(self, boltzmann_energy):
         """
         Generate random velocity with Boltzmann distribution
@@ -155,6 +162,11 @@ class ParticleDistribution(object):
         y_std = np.sqrt(ysq_mean - y_mean ** 2.0)  # (m)
         xp_std = np.sqrt(xpsq_mean - xp_mean ** 2)  # (rad)
         yp_std = np.sqrt(ypsq_mean - yp_mean ** 2)  # (rad)
+
+        self.xm = 2.0 * x_std
+        self.ym = 2.0 * y_std
+        self.xpm = 2.0 * xp_std
+        self.ypm = 2.0 * yp_std
 
         xxp_std = np.mean((self.x - x_mean) * (xp - xp_mean))  # (m * rad)
         yyp_std = np.mean((self.y - y_mean) * (yp - yp_mean))  # (m * rad)
