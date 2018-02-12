@@ -140,6 +140,13 @@ class IonSpecies(object):
         """
         return self._current
 
+    def cyclotron_frequency(self, b):
+        """
+        :param b: B-Field in T
+        :return: cyclotron frequency in Hz
+        """
+        return self._q * echarge * b / self._gamma / self._mass_kg / 2.0 / np.pi
+
     def mass_mev(self):
         return self._mass_mev
 
