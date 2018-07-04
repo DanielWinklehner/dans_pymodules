@@ -215,7 +215,119 @@ class Field(object):
             print("Detected OPERA table file from extension, loading...")
             self._load_from_table_file(filename)
 
+        if ext == ".comsol":
+            print("Detected COMSOL file from extension, loading...")
+            self._load_from_COMSOL_file(filename)
+
         return 0
+
+    def _load_from_COMSOL_file(self, filename):
+
+        self._dim = 3
+
+        label_map = {"mir1x": "X",
+                     "mir1y": "Y",
+                     "mir1z": "Z",
+                     "mf.Bx": "BX",
+                     "mf.By": "BY",
+                     "mf.Bz": "BZ"}
+
+        with open(filename, 'r') as infile:
+
+            nlines = 9  # Number of header lines
+            data = {}
+
+            for i in range(nlines):
+                line = infile.readline().strip()
+                sline = line.split()
+                if i == 3:
+                    # self._dim = int(sline[2])
+                    spatial_dims = 3
+                    efield_dims = 0
+                    bfield_dims = 3
+                elif i == 4:
+                    array_len = int(sline[2])
+                elif i == 7:
+                    l_unit = sline[3]
+                elif i == 8:
+                    if "(T)" in sline:
+                        b_unit = "T"
+                    j = 0
+                    for label in sline:
+                        if label not in ["%", "(T)"]:
+                            nlabel = label_map[label]
+                            data[nlabel] = {"column": j}
+                            if nlabel in ["X", "Y", "Z"]:
+                                data[nlabel]["unit"] = l_unit
+                            elif nlabel in ["BX", "BY", "BZ"]:
+                                data[nlabel]["unit"] = b_unit
+                            # Another statement for EX, EY, EZ
+                            if self._debug:
+                                print("Header: '{}' recognized as unit {}".format(nlabel, data[nlabel]["unit"]))
+                            j += 1
+
+            self._dim = 3
+            _data = np.zeros([array_len, spatial_dims + efield_dims + bfield_dims])
+
+            # Read data
+            for i, line in enumerate(infile):
+                _data[i] = [float(item) for item in line.split()]
+
+        if self._debug:
+            print("Data Info:")
+            for key in sorted(data.keys()):
+                print(key, data[key])
+
+        _data = _data[np.lexsort(_data.T[[1]])]
+        _data = _data[np.lexsort(_data.T[[0]])].T
+
+        n = {}
+        n["X"], n["Y"], n["Z"] = len(np.unique(_data[0])), \
+                                 len(np.unique(_data[1])), \
+                                 len(np.unique(_data[2]))
+
+        for key, item in data.items():
+            if item["unit"] == "mm":
+                item["data"] = np.unique(_data[item["column"]])
+
+            else:
+                item["data"] = np.reshape(_data[item["column"]], [n["X"], n["Y"], n["Z"]])
+
+        del _data
+        gc.collect()
+
+        print("Creating Interpolator for {}D field...".format(self._dim))
+
+        self._dim_labels = []
+
+        # Process the data into the class variables
+        # TODO: For now assume that field labels are either "BX", ... or "EX", ...
+        label_selector = [["BX", "BY", "BZ"], ["EX", "EY", "EZ"]]
+        field_type = len(np.unique([0 for key, item in data.items() if item["unit"] == "V/cm"]))
+
+        for key in label_selector[field_type]:
+
+            if key in data.keys():
+
+                item = data[key]
+                self._unit = item["unit"]
+                self._dim_labels.append(label_dict[key])
+
+                if self._dim == 3:
+                    #  Create a Interpolator object for each of the field dimensions
+                    # TODO: For now we assume that columns are labeled X, Y, Z and existed in the file
+
+                    self._field[label_dict[key]] = RegularGridInterpolator(
+                        points=[data["X"]["data"] * self._unit_scale,
+                                data["Y"]["data"] * self._unit_scale,
+                                data["Z"][
+                                    "data"] * self._unit_scale],
+                        values=item["data"],
+                        bounds_error=False,
+                        fill_value=0.0)
+
+        return 0
+
 
     def _load_from_table_file(self, filename):
 
@@ -238,7 +350,7 @@ class Field(object):
                     break
 
                 col_no, label, unit = line.split()
-
+                # print(label)
                 data[label] = {"column": int(col_no) - 1}
 
                 if "LENGU" in unit:
@@ -339,7 +451,7 @@ class Field(object):
             if key in data.keys():
 
                 item = data[key]
-
+                print(item["data"].shape)
                 self._unit = item["unit"]
                 self._dim_labels.append(label_dict[key])
 
