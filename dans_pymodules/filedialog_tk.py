@@ -44,6 +44,7 @@ class FileDialog(object):
             self._filename = myfiledialog.askopenfilename(initialdir=old_path,
                                                           title='Open file...',
                                                           parent=self._root)
+
         elif action == 'save':
 
             self._filename = myfiledialog.asksaveasfilename(initialdir=old_path,
@@ -65,7 +66,7 @@ class FileDialog(object):
 
         self._root.destroy()
 
-        if self._filename == "":
+        if not self._filename:
             self._filename = None
             self._cb_state = None
 
@@ -76,6 +77,7 @@ class FileDialog(object):
         else:
 
             return self._filename, self._cb_state
+
 
 if __name__ == '__main__':
     # Test the dialog

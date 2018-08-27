@@ -2,7 +2,7 @@ from setuptools import setup
 # from Cython.Build import cythonize
 
 setup(name='dans_pymodules',
-      version='4.5',
+      version='4.5.1',
       description='Useful little modules that I likely need in more than one application',
       url='https://github.com/DanielWinklehner/dans_pymodules',
       author='Daniel Winklehner, Philip Weigel',
