@@ -29,6 +29,7 @@ class TableToH5(object):
                      "hz": np.zeros(self._size)}
 
     def set_data(self):
+
         with open(self.filename + '.table', 'r') as table:
             h = 0
             _s = self._size[0] * self._size[1] * self._size[2]
@@ -108,17 +109,17 @@ class COMSOLToH5(object):
         # Calculates the size of data arrays
         # noinspection PyTypeChecker
         self._size = np.array((r_max - r_min) / spacing + 1, int)
-        print(self._size)
+        print("Size = ", self._size)
         # Initialize the h5 data
         # Data Format:
         # Dictionary with keys "ex", "ey", "ez", "hx", "hy", and "hz", which correspond to the vector components
         # of the electric field and the H field.
-        self.data = {"ex": np.zeros(self._size),
-                     "ey": np.zeros(self._size),
-                     "ez": np.zeros(self._size),
-                     "hx": np.zeros(self._size),
-                     "hy": np.zeros(self._size),
-                     "hz": np.zeros(self._size)}
+        self.data = {"ex": np.zeros([self._size[2], self._size[1], self._size[0]]),
+                     "ey": np.zeros([self._size[2], self._size[1], self._size[0]]),
+                     "ez": np.zeros([self._size[2], self._size[1], self._size[0]]),
+                     "hx": np.zeros([self._size[2], self._size[1], self._size[0]]),
+                     "hy": np.zeros([self._size[2], self._size[1], self._size[0]]),
+                     "hz": np.zeros([self._size[2], self._size[1], self._size[0]])}
 
     def set_data(self):
 
@@ -126,18 +127,22 @@ class COMSOLToH5(object):
 
             h = 0
             _s = self._size[0] * self._size[1] * self._size[2]
-            _lines = table.readlines()[5:]
+            _lines = table.readlines()[9:]
+            # _x, _y, _z = np.zeros(_s), np.zeros(_s), np.zeros(_s)
             _ex, _ey, _ez = np.zeros(_s), np.zeros(_s), np.zeros(_s)
             # _hx, _hy, _hz = np.zeros(_s), np.zeros(_s), np.zeros(_s)
 
             for line in _lines:
-
                 # [X] [Y] [Z] [EX] [EY] [EZ]
                 _tmp = line.lstrip().rstrip().split()
+                # _xy_values = [float(_tmp[0]), float(_tmp[1]), float(_tmp[2])]
                 _values = [float(_tmp[3]), float(_tmp[4]), float(_tmp[5])]
                 for i in range(3):
                     if np.isnan(_values[i]):
                         _values[i] = 0.0
+                    # if np.isnan(_xy_values[i]):
+                    #     _xy_values[i] = 0.0
+                # _x[h], _y[h], _z[h] = _xy_values
                 _ex[h], _ey[h], _ez[h] = _values
                 # _hx, _hy, _hz = float(_tmp[0]), float(_tmp[1]), float(_tmp[2])
                 h += 1
@@ -145,13 +150,13 @@ class COMSOLToH5(object):
         for i in range(self._size[2]):
             for j in range(self._size[1]):
                 for k in range(self._size[0]):
-
-                    self.data["ex"][k, j, i] = _ex[k + j * self._size[0] + i * self._size[0] * self._size[1]] * 1e-6
-                    self.data["ey"][k, j, i] = _ey[k + j * self._size[0] + i * self._size[0] * self._size[1]] * 1e-6
-                    self.data["ez"][k, j, i] = _ez[k + j * self._size[0] + i * self._size[0] * self._size[1]] * 1e-6
+                    self.data["ex"][i, j, k] = _ex[k + j * self._size[0] + i * self._size[0] * self._size[1]] * 1e-6
+                    self.data["ey"][i, j, k] = _ey[k + j * self._size[0] + i * self._size[0] * self._size[1]] * 1e-6
+                    self.data["ez"][i, j, k] = _ez[k + j * self._size[0] + i * self._size[0] * self._size[1]] * 1e-6
                     # self.data["hx"][i, j, k] = _hx[i + j * self._size[2] + k * self._size[2] * self._size[1]] * 1e-3
                     # self.data["hy"][i, j, k] = _hy[i + j * self._size[2] + k * self._size[2] * self._size[1]] * 1e-3
                     # self.data["hz"][i, j, k] = _hz[i + j * self._size[2] + k * self._size[2] * self._size[1]] * 1e-3
+
         print(self.data["ex"].shape)
 
     def generate(self):
@@ -198,6 +203,7 @@ class COMSOLToH5(object):
 
 
 class createBFieldMap(object):
+
     def __init__(self, spacing, r_min, r_max, filename='dummy_field'):
         self.spacing = spacing
         self.r_min = r_min
@@ -273,15 +279,17 @@ if __name__ == '__main__':
     # r_max = np.array([100.0, 100.0, 100.0])
 
     spacing = np.array([1.0, 1.0, 1.0])
-    r_min = np.array([-100.0, -100.0, -120.0])
-    r_max = np.array([100.0, 100.0, 50.0])
-    filename = '/home/philip/work/field_maps/si_efield_84keV_16kV'
+    r_min = np.array([-250.0, -250.0, -30.0])
+    r_max = np.array([250.0, 250.0, 30.0])
+    filename = r"D:\Daniel\Dropbox (MIT)\Projects\RFQ Direct Injection\Comsol\AIMA CR Design\AIMA_80kV_RF_no_SI_1mm"
 
     # Assumes that the .table filename is the same as the filename you want to save the h5 to.
     # filename = '/home/philip/src/dans_pymodules/dans_pymodules/test_fieldmaps/plate_capacitor_11x11x11_test'
 
-    my_h5 = TableToH5(spacing=spacing, r_min=r_min, r_max=r_max, filename=filename)
+    # my_h5 = TableToH5(spacing=spacing, r_min=r_min, r_max=r_max, filename=filename)
+    # my_h5.set_data()
+    # # my_h5 = createBFieldMap(spacing, r_min, r_max, filename=filename)
+    # my_h5._set_uniform_bfield(tesla=1.041684)
+    my_h5 = COMSOLToH5(spacing=spacing, r_min=r_min, r_max=r_max, filename=filename)
     my_h5.set_data()
-    # my_h5 = createBFieldMap(spacing, r_min, r_max, filename=filename)
-    my_h5._set_uniform_bfield(tesla=1.041684)
     my_h5.generate()

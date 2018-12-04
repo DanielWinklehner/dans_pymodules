@@ -1,5 +1,6 @@
 from scipy.interpolate import RegularGridInterpolator
 import gc
+from scipy.interpolate import interp1d, interp2d, griddata
 import numpy as np
 import os
 from .filedialog import *
@@ -97,10 +98,33 @@ class Field(object):
         :return _r, _t, _z:
         """
 
-        _r = np.sqrt(_x ** 2.0 + _y ** 2.0)
+        _r = np.sqrt(_x * _x + _y * _y)
         _t = np.arctan2(_y, _x)
 
         return _r, _t, _z
+
+    @staticmethod
+    def cylinder_to_cartesian_field(_r, _t, _z, _br, _bt, _bz):
+        """
+        Converts polar coordinates into cartesian coordinates.
+        :param _r:
+        :param _t:
+        :param _z:
+        :param _br:
+        :param _bt:
+        :param _bz:
+        :return _x, _y, _z:
+        """
+
+        _t_rad = np.deg2rad(_t)
+
+        _x = _r * np.cos(_t_rad)
+        _y = _r * np.sin(_t_rad)
+
+        _bx = _br * np.cos(_t_rad) - _bt * np.sin(_t_rad)
+        _by = _br * np.sin(_t_rad) + _bt * np.cos(_t_rad)
+
+        return _x, _y, _z, _bx, _by, _bz
 
     @staticmethod
     def cylinder_to_cartesian(_r, _t, _z):
@@ -112,8 +136,8 @@ class Field(object):
         :return _x, _y, _z:
         """
 
-        _x = _r * np.cos(_t / 180.0 * np.pi)
-        _y = _r * np.sin(_t / 180.0 * np.pi)
+        _x = _r * np.cos(np.deg2rad(_t))
+        _y = _r * np.sin(np.deg2rad(_t))
 
         return _x, _y, _z
 
@@ -211,17 +235,179 @@ class Field(object):
 
         _, ext = os.path.splitext(filename)
 
+        if ext == ".map":
+            print("Detected AIMA Agora field file. All '*.map' files in the current folder will be used!")
+            self._load_from_agora_file(filename)
+
         if ext == ".table":
             print("Detected OPERA table file from extension, loading...")
             self._load_from_table_file(filename)
 
         if ext == ".comsol":
             print("Detected COMSOL file from extension, loading...")
-            self._load_from_COMSOL_file(filename)
+            self._load_from_comsol_file(filename)
 
         return 0
 
-    def _load_from_COMSOL_file(self, filename):
+    def _load_from_agora_file(self, filename, mirror=False):
+
+        self._dim = 3
+        interp_method = "linear"
+
+        # Find all *.map files in the current folder
+        _path = os.path.split(filename)[0]
+        _all_files = []
+        for entry in os.scandir(_path):
+            if entry.is_file() and os.path.splitext(entry.name)[1] == ".map":
+                _all_files.append(entry.name)
+
+        _br = np.zeros([])
+        _bf = np.zeros([])
+        _bz = np.zeros([])
+
+        _r = np.zeros([])
+        _th = np.zeros([])
+        _z = np.zeros([])
+
+        _metadata = []
+        _metadata_types = np.dtype([("fn", np.unicode_, 1024),   # filename
+                                    ("fcomp", np.unicode_, 2),   # field component (bf, br, bz)
+                                    ("zpos", float)])            # z position (mm)
+
+        for _file in _all_files:
+            _z_pos, res = _file.split("Z")[1].split("-")  # mm
+            _b_comp = res.split(".")[0]
+
+            if self._debug:
+                print("File '{}' with component '{}' has Z position {} mm".format(_file, _b_comp, _z_pos))
+
+            _metadata.append((os.path.join(_path, _file), _b_comp, _z_pos))
+
+        _metadata = np.array(_metadata, dtype=_metadata_types)
+
+        # Assert that there are an equal number of files for each component and each z position
+        assert \
+            np.array_equal(_metadata[np.where(_metadata["fcomp"] == "bz")]["zpos"],
+                           _metadata[np.where(_metadata["fcomp"] == "br")]["zpos"]) and \
+            np.array_equal(_metadata[np.where(_metadata["fcomp"] == "bz")]["zpos"],
+                           _metadata[np.where(_metadata["fcomp"] == "bf")]["zpos"]), \
+            "Not all components have the same z positions. Maybe a file is missing?"
+
+        # Assert that r and theta resolution and limits are the same
+        with open(_metadata["fn"][0]) as infile:
+            infile.readline()
+            _nth, _nr = [int(value) for value in infile.readline().strip().split()]
+            _sr, _dr = [float(value) for value in infile.readline().strip().split()]
+            _sth, _dth = [float(value) for value in infile.readline().strip().split()]
+            old_limits = np.array([_nth, _nr, _sr, _dr, _sth, _dth])
+        for _filename in _metadata["fn"][1:]:
+            with open(_filename, 'r') as infile:
+                infile.readline()
+                _nth, _nr = [int(value) for value in infile.readline().strip().split()]
+                _sr, _dr = [float(value) for value in infile.readline().strip().split()]
+                _sth, _dth = [float(value) for value in infile.readline().strip().split()]
+                new_limits = np.array([_nth, _nr, _sr, _dr, _sth, _dth])
+                assert np.array_equal(old_limits, new_limits), "Limits for r, th in some of the files are not the same!"
+                old_limits = new_limits
+
+        _r_unique = np.round(np.linspace(_sr, _nr * _dr, _nr, endpoint=False), 10)  # cm
+        _th_unique = np.round(np.linspace(_sth, _nth * _dth, _nth, endpoint=False), 10)  # degree
+        _z_unique = np.sort(np.unique(_metadata["zpos"])) / 10.0  # mm --> cm
+        _n_z_pos = len(_z_unique)
+
+        _r, _th = np.meshgrid(_r_unique, _th_unique)
+
+        # _z = np.tile(_z_unique, (_r.size, 1)).T.flatten()
+        # _r = np.tile(_r.flatten(), (_n_z_pos, 1)).flatten()
+        # _th = np.tile(_th.flatten(), (_n_z_pos, 1)).flatten()
+
+        # _data = {"r": _r,
+        #          "th": _th,
+        #          "z": _z,
+        #          "br": np.array([], float),
+        #          "bf": np.array([], float),
+        #          "bz": np.array([], float)}
+
+        for _z in _z_unique:
+            _data = {}
+            for _val in _metadata[np.where(_metadata["zpos"] == _z)]:
+                _filename, _fcomp, _zpos = _val
+
+                with open(_filename, 'r') as infile:
+                    _raw_data = infile.readlines()[4:-1]
+
+                _data[_fcomp] = np.array([np.fromstring(_line, sep=" ") for _line in _raw_data]).flatten()
+
+            _data["x"], _data["y"], _data["z"], _data["bx"], _data["by"], _data["bz"] = \
+                self.cylinder_to_cartesian_field(_r.flatten(), _th.flatten(), _z, _data["br"], _data["bf"], _data["bz"])
+
+            # Naturally, this is not a regular grid in x, y now...
+            print()
+            print("Starting griddata... "),
+
+            # grid_x, grid_y = np.mgrid[self.limits[0]:self.limits[1]:500j, self.limits[2]:self.limits[3]:500j]
+
+            _x = np.round(np.linspace(min(_data["x"]), max(_data["x"]), 1000), 10)
+            _y = np.round(np.linspace(min(_data["y"]), max(_data["y"]), 1000), 10)
+
+            grid_x, grid_y = np.meshgrid(_x, _y, indexing='ij')
+            grid_z = np.ones(grid_x.shape) * _z
+
+            bx = griddata((_data["x"], _data["y"]), _data["bx"],
+                          (grid_x, grid_y),
+                          method=interp_method,
+                          fill_value=0.0)
+
+            by = griddata((_data["x"], _data["y"]), _data["by"],
+                          (grid_x, grid_y),
+                          method=interp_method,
+                          fill_value=0.0)
+
+            bz = griddata((_data["x"], _data["y"]), _data["bz"],
+                          (grid_x, grid_y),
+                          method=interp_method,
+                          fill_value=0.0)
+
+            # from matplotlib import pyplot as plt
+            # plt.subplot(221)
+            # plt.title("Bx")
+            # plt.xlabel("x (cm)")
+            # plt.ylabel("y (cm)")
+            # cont = plt.contourf(grid_x, grid_y, bx)
+            # plt.colorbar(cont)
+            # plt.subplot(222)
+            # plt.title("By")
+            # plt.xlabel("x (cm)")
+            # plt.ylabel("y (cm)")
+            # cont = plt.contourf(grid_x, grid_y, by)
+            # plt.colorbar(cont)
+            # plt.subplot(223)
+            # plt.title("Bz")
+            # plt.xlabel("x (cm)")
+            # plt.ylabel("y (cm)")
+            # cont = plt.contourf(grid_x, grid_y, bz)
+            # plt.colorbar(cont)
+            # plt.show()
+
+            print("Done!")
+        #
+        # # Transform into cartesian coordinates before creating interpolator object.
+        # # TODO: All of this should be restructured to allow for cylindrical fields, optionally with symmetries
+        # _data["x"], _data["y"], _data["z"], _data["bx"], _data["by"], _data["bz"] = \
+        #     self.cylinder_to_cartesian_field(_data["r"], _data["th"], _data["z"], _data["br"], _data["bf"], _data["bz"])
+        #
+        # for key in ["bx", "by", "bz"]:
+        #     self._field[label_dict[key]] = RegularGridInterpolator(
+        #         points=[_data["x"] * self._unit_scale,
+        #                 _data["y"] * self._unit_scale,
+        #                 _data["z"] * self._unit_scale],
+        #         values=_data[key],
+        #         bounds_error=False,
+        #         fill_value=0.0)
+
+        return 0
+
+    def _load_from_comsol_file(self, filename):
 
         self._dim = 3
 
@@ -266,7 +452,6 @@ class Field(object):
                                 print("Header: '{}' recognized as unit {}".format(nlabel, data[nlabel]["unit"]))
                             j += 1
 
-            self._dim = 3
             _data = np.zeros([array_len, spatial_dims + efield_dims + bfield_dims])
 
             # Read data
@@ -320,14 +505,12 @@ class Field(object):
                     self._field[label_dict[key]] = RegularGridInterpolator(
                         points=[data["X"]["data"] * self._unit_scale,
                                 data["Y"]["data"] * self._unit_scale,
-                                data["Z"][
-                                    "data"] * self._unit_scale],
+                                data["Z"]["data"] * self._unit_scale],
                         values=item["data"],
                         bounds_error=False,
                         fill_value=0.0)
 
         return 0
-
 
     def _load_from_table_file(self, filename):
 
@@ -539,10 +722,15 @@ class Field(object):
 
         return self._scaling
 
+
 # Set up some tests
 if __name__ == "__main__":
+
     mydebug = True
-    import matplotlib.pyplot as plt
+    bfield1 = Field(label="Test importing AIMA field 3D",
+                    debug=mydebug)
+    bfield1.load_field_from_file()
+    exit()
     # if platform.node() == "Mailuefterl":
     #     folder = r"D:\Daniel\Dropbox (MIT)\Projects" \
     #              r"\RFQ Direct Injection\Cyclotron"
@@ -582,6 +770,7 @@ if __name__ == "__main__":
 
     _, _, bz = bfield1(points)
 
+    import matplotlib.pyplot as plt
     plt.plot(z, bz)
     plt.show()
 
