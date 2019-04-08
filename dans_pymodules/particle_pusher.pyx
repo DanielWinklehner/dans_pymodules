@@ -53,7 +53,7 @@ class ParticlePusher(object):
                  np.ndarray[DTYPE1_t, ndim=1] _v,
                  np.ndarray[DTYPE1_t, ndim=1] _efield,
                  np.ndarray[DTYPE1_t, ndim=1] _bfield,
-                 DTYPE1 _dt):
+                 DTYPE1_t _dt):
 
         cdef np.ndarray[DTYPE1_t, ndim=1] t = 0.5 * self._ion.q_over_m() * _bfield * _dt
         cdef np.ndarray[DTYPE1_t, ndim=1] s = 2.0 * t / (1.0 + np.linalg.norm(t) ** 2.0)
@@ -70,7 +70,7 @@ class ParticlePusher(object):
                     np.ndarray[DTYPE1_t, ndim=1] _v,
                     np.ndarray[DTYPE1_t, ndim=1] _efield,
                     np.ndarray[DTYPE1_t, ndim=1] _bfield,
-                    DTYPE1 _dt):
+                    DTYPE1_t _dt):
 
         cdef np.ndarray[DTYPE1_t, ndim=1] result = _v + self._ion.q_over_m() * (_efield + np.cross(_v, _bfield)) * _dt
 
@@ -82,7 +82,7 @@ class ParticlePusher(object):
                            np.ndarray[DTYPE1_t, ndim=1] _v,
                            np.ndarray[DTYPE1_t, ndim=1] _efield,
                            np.ndarray[DTYPE1_t, ndim=1] _bfield,
-                           DTYPE1 _dt):
+                           DTYPE1_t _dt):
 
         cdef np.ndarray[DTYPE1_t, ndim=1] b_norm = np.linalg.norm(_bfield)
 
@@ -105,7 +105,7 @@ class ParticlePusher(object):
              np.ndarray[DTYPE1_t, ndim=1] _v,
              np.ndarray[DTYPE1_t, ndim=1] _efield,
              np.ndarray[DTYPE1_t, ndim=1] _bfield,
-             DTYPE1 _dt):
+             DTYPE1_t _dt):
 
         _v = self._v(_v, _efield, _bfield, _dt)  # Call the velocity function determined by the algorithm
         _r += _v * _dt
