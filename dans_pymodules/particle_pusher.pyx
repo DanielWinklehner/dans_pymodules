@@ -93,7 +93,7 @@ class ParticlePusher(object):
         cdef np.ndarray[DTYPE1_t, ndim=1] epsilon = 0.5 * self._ion.q_over_m() * b_norm * _dt
         cdef np.ndarray[DTYPE1_t, ndim=2] mat_p = np.eye(3) + epsilon * rot_mat
         cdef np.ndarray[DTYPE1_t, ndim=2] mat_m_inv = np.linalg.inv(np.eye(3) - epsilon * rot_mat)
-        cdef np.ndarray[DTYPE1_t, ndim=1] _v = np.matmul(np.matmul(mat_m_inv, mat_p), _v) + \
+        _v = np.matmul(np.matmul(mat_m_inv, mat_p), _v) + \
                                                np.matmul(mat_m_inv, _efield) * self._ion.q_over_m() * _dt
 
         return _v
@@ -107,8 +107,8 @@ class ParticlePusher(object):
              np.ndarray[DTYPE1_t, ndim=1] _bfield,
              DTYPE1 _dt):
 
-        cdef np.ndarray[DTYPE1_t, ndim=1] _v = self._v(_v, _efield, _bfield, _dt)  # Call the velocity function determined by the algorithm
-        cdef np.ndarray[DTYPE1_t, ndim=1] _r += _v * _dt
+        _v = self._v(_v, _efield, _bfield, _dt)  # Call the velocity function determined by the algorithm
+        _r += _v * _dt
 
         return _r, _v
 
