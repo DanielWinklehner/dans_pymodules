@@ -3,7 +3,10 @@ import gc
 from scipy.interpolate import interp1d, interp2d, griddata
 import numpy as np
 import os
+import pickle
 from .filedialog import *
+import h5py
+import re
 
 __author__ = "Daniel Winklehner"
 __doc__ = """Class to load field data save as interpolation functions to get field data at point"""
@@ -17,6 +20,19 @@ label_dict = {"EX": "x",
               "X": "x",
               "Y": "y",
               "Z": "z"}
+
+dim_dict = {"mm": "mm",
+            "MM": "mm",
+            "cm": "cm",
+            "CM": "cm",
+            "m": "m",
+            "M": "m",
+            "LENGU": "cm",
+            "Tesla": "Tesla",
+            "TESLA": "Tesla",
+            "Gauss": "Gauss",
+            "GAUSS": "Gauss",
+            "FLUXU": "Gauss"}
 
 dim_numbers = {"x": 0,
                "y": 1,
@@ -223,11 +239,13 @@ class Field(object):
 
         return self._label
 
-    def load_field_from_file(self, filename=None):
+    def load_field_from_file(self, filename=None, mirror=False):
 
         if filename is None:
             fd = FileDialog()
             filename = fd.get_filename("open")
+            if filename is None:
+                return 0
 
         assert os.path.exists(filename)
         print("Loading field from file '{}'".format(os.path.split(filename)[1]))
@@ -237,17 +255,23 @@ class Field(object):
 
         if ext == ".map":
             print("Detected AIMA Agora field file. All '*.map' files in the current folder will be used!")
-            self._load_from_agora_file(filename)
+            return self._load_from_agora_file(filename, mirror=mirror)
 
-        if ext == ".table":
+        elif ext == ".table":
             print("Detected OPERA table file from extension, loading...")
-            self._load_from_table_file(filename)
+            return self._load_from_table_file(filename)
 
-        if ext == ".comsol":
+        elif ext == ".comsol":
             print("Detected COMSOL file from extension, loading...")
-            self._load_from_comsol_file(filename)
+            return self._load_from_comsol_file(filename)
 
-        return 0
+        elif ext == ".pickle":
+            print("Detected internal 'pickle' file format, loading...")
+            return self._load_from_pickle_file(filename)
+
+        else:
+            print("Did not recognize the extension. Must be one of '.map', '.table', 'comsol', '.pickle'.")
+            return 1
 
     def _load_from_agora_file(self, filename, mirror=False):
 
@@ -317,56 +341,68 @@ class Field(object):
 
         _r, _th = np.meshgrid(_r_unique, _th_unique)
 
-        # _z = np.tile(_z_unique, (_r.size, 1)).T.flatten()
-        # _r = np.tile(_r.flatten(), (_n_z_pos, 1)).flatten()
-        # _th = np.tile(_th.flatten(), (_n_z_pos, 1)).flatten()
+        _x_temp, _y_temp, _ = self.cylinder_to_cartesian(_r, _th, _z_unique)
+        _x_unique = np.unique(np.round(_x_temp, 10))
+        _y_unique = np.unique(np.round(_y_temp, 10))
+        _x = np.round(np.linspace(min(_x_unique), max(_x_unique), 1000), 10)
+        _y = np.round(np.linspace(min(_y_unique), max(_y_unique), 1000), 10)
 
-        # _data = {"r": _r,
-        #          "th": _th,
-        #          "z": _z,
-        #          "br": np.array([], float),
-        #          "bf": np.array([], float),
-        #          "bz": np.array([], float)}
+        if mirror:
+            _z_actual = np.concatenate((-_z_unique[:0:-1], _z_unique))
+            idx_offset = len(_z_unique) - 1
+        else:
+            _z_actual = _z_unique
+            idx_offset = 0
 
-        for _z in _z_unique:
+        grid_x, grid_y, grid_z = np.meshgrid(_x, _y, _z_actual, indexing='ij')
+        data = {"BX": np.zeros(grid_x.shape),
+                "BY": np.zeros(grid_x.shape),
+                "BZ": np.zeros(grid_x.shape)}
+
+        for j, _z in enumerate(_z_unique):
+
+            i = j + idx_offset
+            k = idx_offset - j
+
             _data = {}
-            for _val in _metadata[np.where(_metadata["zpos"] == _z)]:
+
+            for _val in _metadata[np.where(_metadata["zpos"] == 10.0*_z)]:
                 _filename, _fcomp, _zpos = _val
+
+                print("Reading component {} at z = {} mm".format(_fcomp, _zpos))
 
                 with open(_filename, 'r') as infile:
                     _raw_data = infile.readlines()[4:-1]
 
                 _data[_fcomp] = np.array([np.fromstring(_line, sep=" ") for _line in _raw_data]).flatten()
 
+            # TODO: All of this should be restructured to allow for cylindrical fields, optionally with symmetries
             _data["x"], _data["y"], _data["z"], _data["bx"], _data["by"], _data["bz"] = \
                 self.cylinder_to_cartesian_field(_r.flatten(), _th.flatten(), _z, _data["br"], _data["bf"], _data["bz"])
 
             # Naturally, this is not a regular grid in x, y now...
             print()
-            print("Starting griddata... "),
+            print("Starting griddata for slice {} ...".format(j)),
 
-            # grid_x, grid_y = np.mgrid[self.limits[0]:self.limits[1]:500j, self.limits[2]:self.limits[3]:500j]
+            data["BX"][:, :, i] = griddata((_data["x"], _data["y"]), _data["bx"],
+                                           (grid_x[:, :, i], grid_y[:, :, i]),
+                                           method=interp_method,
+                                           fill_value=0.0)
 
-            _x = np.round(np.linspace(min(_data["x"]), max(_data["x"]), 1000), 10)
-            _y = np.round(np.linspace(min(_data["y"]), max(_data["y"]), 1000), 10)
+            data["BY"][:, :, i] = griddata((_data["x"], _data["y"]), _data["by"],
+                                           (grid_x[:, :, i], grid_y[:, :, i]),
+                                           method=interp_method,
+                                           fill_value=0.0)
 
-            grid_x, grid_y = np.meshgrid(_x, _y, indexing='ij')
-            grid_z = np.ones(grid_x.shape) * _z
+            data["BZ"][:, :, i] = griddata((_data["x"], _data["y"]), _data["bz"],
+                                           (grid_x[:, :, i], grid_y[:, :, i]),
+                                           method=interp_method,
+                                           fill_value=0.0)
 
-            bx = griddata((_data["x"], _data["y"]), _data["bx"],
-                          (grid_x, grid_y),
-                          method=interp_method,
-                          fill_value=0.0)
-
-            by = griddata((_data["x"], _data["y"]), _data["by"],
-                          (grid_x, grid_y),
-                          method=interp_method,
-                          fill_value=0.0)
-
-            bz = griddata((_data["x"], _data["y"]), _data["bz"],
-                          (grid_x, grid_y),
-                          method=interp_method,
-                          fill_value=0.0)
+            if mirror and j != 0:
+                data["BX"][:, :, k] = -data["BX"][:, :, i]
+                data["BY"][:, :, k] = -data["BY"][:, :, i]
+                data["BZ"][:, :, k] = data["BZ"][:, :, i]
 
             # from matplotlib import pyplot as plt
             # plt.subplot(221)
@@ -390,20 +426,15 @@ class Field(object):
             # plt.show()
 
             print("Done!")
-        #
-        # # Transform into cartesian coordinates before creating interpolator object.
-        # # TODO: All of this should be restructured to allow for cylindrical fields, optionally with symmetries
-        # _data["x"], _data["y"], _data["z"], _data["bx"], _data["by"], _data["bz"] = \
-        #     self.cylinder_to_cartesian_field(_data["r"], _data["th"], _data["z"], _data["br"], _data["bf"], _data["bz"])
-        #
-        # for key in ["bx", "by", "bz"]:
-        #     self._field[label_dict[key]] = RegularGridInterpolator(
-        #         points=[_data["x"] * self._unit_scale,
-        #                 _data["y"] * self._unit_scale,
-        #                 _data["z"] * self._unit_scale],
-        #         values=_data[key],
-        #         bounds_error=False,
-        #         fill_value=0.0)
+
+        for key in ["BX", "BY", "BZ"]:
+            self._field[label_dict[key]] = RegularGridInterpolator(
+                points=[_x * self._unit_scale,
+                        _y * self._unit_scale,
+                        _z_actual * self._unit_scale],
+                values=data[key],
+                bounds_error=False,
+                fill_value=0.0)
 
         return 0
 
@@ -466,10 +497,9 @@ class Field(object):
         _data = _data[np.lexsort(_data.T[[1]])]
         _data = _data[np.lexsort(_data.T[[0]])].T
 
-        n = {}
-        n["X"], n["Y"], n["Z"] = len(np.unique(_data[0])), \
-                                 len(np.unique(_data[1])), \
-                                 len(np.unique(_data[2]))
+        n = {"X": len(np.unique(_data[0])),
+             "Y": len(np.unique(_data[1])),
+             "Z": len(np.unique(_data[2]))}
 
         for key, item in data.items():
             if item["unit"] == "mm":
@@ -516,8 +546,8 @@ class Field(object):
 
         with open(filename, 'r') as infile:
 
-            # Read first line with lengths (first three values)
-            _n = np.array([int(val) for val in infile.readline().strip().split()])[:3]
+            # Read first line with lengths (first three values after number label)
+            _n = np.array([int(val) - 1 for val in infile.readline().strip().split()])[1:4]
 
             spatial_dims = 0
             efield_dims = 0
@@ -536,46 +566,46 @@ class Field(object):
                 # print(label)
                 data[label] = {"column": int(col_no) - 1}
 
-                if "LENGU" in unit:
-                    data[label]["unit"] = "cm"
-                    spatial_dims += 1
+                data[label]["unit"] = dim_dict[re.split('\[|\]', unit)[1]]
 
-                elif "FLUXU" in unit:
-                    data[label]["unit"] = "Gauss"
+                if data[label]["unit"] in ["mm", "cm", "m"]:
+                    spatial_dims += 1
+                    self._unit_scale = self._units_switch[data[label]["unit"]]
+
+                elif data[label]["unit"] in ["Gauss", "Tesla"]:
                     bfield_dims += 1
 
-                elif "ELECU" in unit:
-                    data[label]["unit"] = "V/cm"
+                elif data[label]["unit"] in ["V/cm", "V/mm", "V/m"]:
                     efield_dims += 1
 
                 if self._debug:
                     print("Header: '{}' recognized as unit {}".format(label, data[label]["unit"]))
 
-            print("lengths of the spatial dimensions: n = {}".format(_n))
-
             n = {}
             if "X" in data.keys():
-                n["X"] = _n[0]
+                n["X"] = _n[0] + 1
                 if "Y" in data.keys():
-                    n["Y"] = _n[1]
-                    n["Z"] = _n[2]
+                    n["Y"] = _n[1] + 1
+                    n["Z"] = 1
+                    if "Z" in data.keys():
+                        n["Z"] = _n[2] + 1
                 elif "Z" in data.keys():
                     n["Y"] = 1
-                    n["Z"] = _n[1]
+                    n["Z"] = _n[1] + 1
             elif "Y" in data.keys():
                 n["X"] = 1
-                n["Y"] = _n[0]
-                n["Z"] = _n[1]
+                n["Y"] = _n[0] + 1
+                n["Z"] = _n[1] + 1
             elif "Z" in data.keys():
                 n["X"] = 1
                 n["Y"] = 1
-                n["Z"] = _n[0]
+                n["Z"] = _n[0] + 1
 
             print("Sorted spatial dimension lengths: {}".format(n))
 
             # Generate numpy arrays holding the data:
             array_len = n["X"] * n["Y"] * n["Z"]
-
+            print("array_len", array_len)
             # Do some assertions
             self._dim = len(np.where(_n > 1)[0])
 
@@ -593,7 +623,7 @@ class Field(object):
 
         # Get limits and resolution from spatial columns if they exist
         for key, item in data.items():
-            if item["unit"] == "cm":
+            if item["unit"] in ["m", "cm", "mm"]:
                 rmin = _data[0][item["column"]]
                 rmax = _data[-1][item["column"]]
                 item["limits"] = {"lower": rmin,
@@ -611,9 +641,8 @@ class Field(object):
         _data = _data.T
 
         for key, item in data.items():
-            if item["unit"] == "cm":
+            if item["unit"] in ["m", "cm", "mm"]:
                 item["data"] = np.unique(_data[item["column"]])
-
             else:
                 item["data"] = np.reshape(_data[item["column"]], [n["X"], n["Y"], n["Z"]])
 
@@ -627,14 +656,14 @@ class Field(object):
         # Process the data into the class variables
         # TODO: For now assume that field labels are either "BX", ... or "EX", ...
         label_selector = [["BX", "BY", "BZ"], ["EX", "EY", "EZ"]]
-        field_type = len(np.unique([0 for key, item in data.items() if item["unit"] == "V/cm"]))
+        field_type = len(np.unique([0 for key, item in data.items() if item["unit"] in ["V/cm", "V/m", "V/mm"]]))
 
         for key in label_selector[field_type]:
 
             if key in data.keys():
 
                 item = data[key]
-                print(item["data"].shape)
+                # print(item["data"].shape)
                 self._unit = item["unit"]
                 self._dim_labels.append(label_dict[key])
 
@@ -647,6 +676,7 @@ class Field(object):
                         values=item["data"].squeeze(),
                         bounds_error=False,
                         fill_value=0.0)
+
                 elif self._dim == 2:
                     #  Create a Interpolator object for each of the field dimensions
                     # TODO: For now we assume that columns are labeled X, Y and existed in the file
@@ -670,6 +700,7 @@ class Field(object):
                         values=item["data"],
                         bounds_error=False,
                         fill_value=0.0)
+
             else:
 
                 self._dim_labels.append(label_dict[key])
@@ -707,9 +738,132 @@ class Field(object):
                                                                            bounds_error=False,
                                                                            fill_value=0.0)
 
-            # save_pickle_fn = os.path.join(os.path.split(filename)[0], "temp_pickle.dat")
-            # import pickle
-            # pickle.dump(data, save_pickle_fn)
+        return 0
+
+    def _load_from_pickle_file(self, filename):
+
+        with open(filename, "rb") as infile:
+            _data = pickle.load(infile)
+
+        for _key in self.__dict__.keys():
+
+            if _key not in _data.keys():
+                print("Not all attributes were found in the pickle file. Maybe from a different version?")
+                return 1
+
+            setattr(self, _key, _data[_key])
+
+        return 0
+
+    def save_to_file(self, filename=None, spacing=None, r_min=None, r_max=None):
+
+        if filename is None:
+            fd = FileDialog()
+            filename = fd.get_filename("save")
+            if filename is None:
+                return 0
+
+        print("Saving field to file '{}'".format(os.path.split(filename)[1]))
+
+        _, ext = os.path.splitext(filename)
+
+        if ext == ".h5part":
+            self._save_to_h5part(filename, spacing, r_min, r_max)
+
+        elif ext == ".pickle":
+            self._save_to_pickle(filename)
+
+        else:
+            print("Did not recognize the extension, must be one of '.pickle', '.h5part'.")
+
+        return 0
+
+    def _save_to_pickle(self, filename):
+
+        with open(filename, "wb") as outfile:
+
+            _data = {}
+            for _key in self.__dict__.keys():
+                _data[_key] = getattr(self, _key)
+
+            pickle.dump(_data, outfile)
+
+        return 0
+
+    def _save_to_h5part(self, filename, spacing, r_min, r_max):
+
+        assert spacing is not None and r_min is not None and r_max is not None,\
+            "Have to specify spacing and limits for h5part!"
+        assert self._dim == 3, "Saving to h5part only implemented for 3D fields at the moment!"
+
+        # Generate list of points to get fields at
+        nr = np.array((r_max - r_min) / spacing + 1, int)
+        print("r_min = ", r_min, " r_max = ", r_max)
+        print("spacing = ", spacing)
+        print("size = ", nr)
+
+        x_mesh, y_mesh, z_mesh = np.meshgrid(np.linspace(r_min[0], r_max[0], nr[0]),
+                                             np.linspace(r_min[1], r_max[1], nr[1]),
+                                             np.linspace(r_min[2], r_max[2], nr[2]),
+                                             indexing='ij', sparse=False)
+
+        _bx = self._scaling * self._field["x"]((x_mesh, y_mesh, z_mesh))
+        _by = self._scaling * self._field["y"]((x_mesh, y_mesh, z_mesh))
+        _bz = self._scaling * self._field["z"]((x_mesh, y_mesh, z_mesh))
+
+        _data = {"null": np.zeros([nr[2], nr[1], nr[0]]),
+                 "hx": np.zeros([nr[2], nr[1], nr[0]]),
+                 "hy": np.zeros([nr[2], nr[1], nr[0]]),
+                 "hz": np.zeros([nr[2], nr[1], nr[0]])}
+
+        for i in range(nr[2]):
+            for j in range(nr[1]):
+                for k in range(nr[0]):
+                    _data["hx"][i, j, k] = _bx[k, j, i]
+                    _data["hy"][i, j, k] = _by[k, j, i]
+                    _data["hz"][i, j, k] = _bz[k, j, i]
+
+        # Create new h5 file
+        try:
+            os.remove(filename)
+        except Exception as _e:
+            print(_e)
+
+        h5_file = h5py.File(filename, "w")
+
+        # Create the zeroth step and the Block inside of it
+        h5_file.attrs.__setitem__("Resonance Frequency(Hz)", np.array([32800000.0]))
+        step0 = h5_file.create_group("Step#0")
+        block = step0.create_group("Block")
+
+        # Create the E Field group
+        e_field = block.create_group("Efield")
+
+        # Store the x, y, and z data for the E Field
+        e_field.create_dataset("0", data=_data["null"])
+        e_field.create_dataset("1", data=_data["null"])
+        e_field.create_dataset("2", data=_data["null"])
+
+        # Set the spacing and origin attributes for the E Field group
+        e_field.attrs.__setitem__("__Spacing__", spacing)
+        e_field.attrs.__setitem__("__Origin__", r_min)
+
+        # Create the H Field group
+        h_field = block.create_group("Hfield")
+
+        # Store the x, y, and z data points for the H Fiend
+        h_field.create_dataset("0", data=_data["hx"])
+        h_field.create_dataset("1", data=_data["hy"])
+        h_field.create_dataset("2", data=_data["hz"])
+
+        # Set the spacing and origin attributes for the H Field group
+        h_field.attrs.__setitem__("__Spacing__", spacing)
+        h_field.attrs.__setitem__("__Origin__", r_min)
+
+        print(_data["hx"].shape)
+
+        # Close the file
+        h5_file.close()
 
         return 0
 
@@ -730,6 +884,19 @@ if __name__ == "__main__":
     bfield1 = Field(label="Test importing AIMA field 3D",
                     debug=mydebug)
     bfield1.load_field_from_file()
+
+    x = np.zeros(2000)
+    y = np.zeros(2000)
+    z = np.linspace(-15, 5, 2000)
+
+    points = np.vstack([x, y, z]).T
+
+    _, _, bz = bfield1(points)
+
+    import matplotlib.pyplot as plt
+    plt.plot(z, bz)
+    plt.show()
+
     exit()
     # if platform.node() == "Mailuefterl":
     #     folder = r"D:\Daniel\Dropbox (MIT)\Projects" \

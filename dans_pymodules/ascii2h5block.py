@@ -281,7 +281,8 @@ if __name__ == '__main__':
     spacing = np.array([1.0, 1.0, 1.0])
     r_min = np.array([-250.0, -250.0, -30.0])
     r_max = np.array([250.0, 250.0, 30.0])
-    filename = r"D:\Daniel\Dropbox (MIT)\Projects\RFQ Direct Injection\Comsol\AIMA CR Design\AIMA_80kV_RF_no_SI_1mm"
+    filename = r"C:\Users\Daniel Winklehner\Dropbox (MIT)\Projects\RFQ Direct" \
+               r" Injection\Comsol\AIMA CR Design\AIMA_80kV_RF_no_SI_2mm"
 
     # Assumes that the .table filename is the same as the filename you want to save the h5 to.
     # filename = '/home/philip/src/dans_pymodules/dans_pymodules/test_fieldmaps/plate_capacitor_11x11x11_test'
