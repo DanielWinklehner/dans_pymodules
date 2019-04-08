@@ -37,6 +37,44 @@ class ParticlePusher(object):
 
         self._v = self._alg_switch[self._algorithm]
 
+        self._efield = None
+        self._bfield = None
+
+    def set_efield(self, efield):
+        self._efield = efield
+
+    def set_bfield(self, bfield):
+        self._bfield = bfield
+
+    @cython.boundscheck(False)  # turn off bounds-checking for entire function
+    @cython.wraparound(False)  # turn off negative index wrapping for entire function
+    def track(self,
+              np.ndarray[DTYPE1_t, ndim=1] r0,
+              np.ndarray[DTYPE1_t, ndim=1] v0,
+              DTYPE2_t nsteps,
+              DTYPE1_t dt):
+
+        cdef np.ndarray[DTYPE1_t, ndim=2] r = np.zeros([nsteps + 1, 3])
+        cdef np.ndarray[DTYPE1_t, ndim=2] v = np.zeros([nsteps + 1, 3])
+
+        r[0] = r0
+        v[0] = v0
+
+        # initialize the velocity half a step back:
+        cdef np.ndarray[DTYPE1_t, ndim=1] ef = efield1(r[0])
+        cdef np.ndarray[DTYPE1_t, ndim=1] bf = bfield1(r[0])
+
+        _, v[0] = pusher.push(r[0], v[0], ef, bf, -0.5 * dt)
+
+        cdef int i = 0
+        for i in range(nsteps):
+            ef = efield1(r[i])
+            bf = bfield1(r[i])
+
+            r[i + 1], v[i + 1] = self.push(r[i], v[i], ef, bf, dt)
+
+        return r, v
+
     def algorithm(self, algorithm=None):
 
         if algorithm in self._alg_switch.keys():
