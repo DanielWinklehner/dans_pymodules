@@ -54,6 +54,8 @@ class ParticlePusher(object):
               DTYPE2_t nsteps,
               DTYPE1_t dt):
 
+        assert self._efield is not None or self._efield is not None, "Either efield or bfield (or both) have to be set!"
+
         cdef np.ndarray[DTYPE1_t, ndim=2] r = np.zeros([nsteps + 1, 3])
         cdef np.ndarray[DTYPE1_t, ndim=2] v = np.zeros([nsteps + 1, 3])
 
@@ -61,15 +63,15 @@ class ParticlePusher(object):
         v[0] = v0
 
         # initialize the velocity half a step back:
-        cdef np.ndarray[DTYPE1_t, ndim=1] ef = efield1(r[0])
-        cdef np.ndarray[DTYPE1_t, ndim=1] bf = bfield1(r[0])
+        cdef np.ndarray[DTYPE1_t, ndim=1] ef = self._efield(r[0])
+        cdef np.ndarray[DTYPE1_t, ndim=1] bf = self._bfield(r[0])
 
         _, v[0] = pusher.push(r[0], v[0], ef, bf, -0.5 * dt)
 
         cdef int i = 0
         for i in range(nsteps):
-            ef = efield1(r[i])
-            bf = bfield1(r[i])
+            ef = self._efield1(r[i])
+            bf = self._bfield1(r[i])
 
             r[i + 1], v[i + 1] = self.push(r[i], v[i], ef, bf, dt)
 
