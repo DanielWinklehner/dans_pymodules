@@ -66,7 +66,7 @@ class ParticlePusher(object):
         cdef np.ndarray[DTYPE1_t, ndim=1] ef = self._efield(r[0])
         cdef np.ndarray[DTYPE1_t, ndim=1] bf = self._bfield(r[0])
 
-        _, v[0] = pusher.push(r[0], v[0], ef, bf, -0.5 * dt)
+        _, v[0] = self.push(r[0], v[0], ef, bf, -0.5 * dt)
 
         cdef int i = 0
         for i in range(nsteps):
@@ -74,6 +74,12 @@ class ParticlePusher(object):
             bf = self._bfield1(r[i])
 
             r[i + 1], v[i + 1] = self.push(r[i], v[i], ef, bf, dt)
+
+        # Push velocity one more half-step forward
+        # TODO: Think about where to grab the fields and which r to use...
+        ef = self._efield1(r[-1])
+        bf = self._bfield1(r[-1])
+        _, v[-1] = self.push(r[-1], v[-1], ef, bf, 0.5 * dt)
 
         return r, v
 
