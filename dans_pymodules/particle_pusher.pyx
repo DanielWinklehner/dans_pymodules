@@ -39,12 +39,16 @@ class ParticlePusher(object):
 
         self._efield = None
         self._bfield = None
+        self._bounding_electrodes = None
 
     def set_efield(self, efield):
         self._efield = efield
 
     def set_bfield(self, bfield):
         self._bfield = bfield
+
+    def set_bds(self, electrodes):
+        self._bounding_electrodes = electrodes
 
     @cython.boundscheck(False)  # turn off bounds-checking for entire function
     @cython.wraparound(False)  # turn off negative index wrapping for entire function
@@ -68,18 +72,36 @@ class ParticlePusher(object):
 
         _, v[0] = self.push(r[0], v[0], ef, bf, -0.5 * dt)
 
-        cdef int i = 0
-        for i in range(nsteps):
-            ef = self._efield(r[i])
-            bf = self._bfield(r[i])
+        if self._bounding_electrodes is None:
+            # Track without electrode boundary check
+            cdef int i = 0
+            for i in range(nsteps):
+                ef = self._efield(r[i])
+                bf = self._bfield(r[i])
 
-            r[i + 1], v[i + 1] = self.push(r[i], v[i], ef, bf, dt)
+                r[i + 1], v[i + 1] = self.push(r[i], v[i], ef, bf, dt)
 
-        # Push velocity one more half-step forward
-        # TODO: Think about where to grab the fields and which r to use...
-        ef = self._efield(r[-1])
-        bf = self._bfield(r[-1])
-        _, v[-1] = self.push(r[-1], v[-1], ef, bf, 0.5 * dt)
+                # Push velocity one more half-step forward
+                # TODO: Think about where to grab the fields and which r to use...
+                ef = self._efield(r[-1])
+                bf = self._bfield(r[-1])
+                _, v[-1] = self.push(r[-1], v[-1], ef, bf, 0.5 * dt)
+
+        else:
+            # Track with electrode boundary check
+            cdef int i = 0
+            for i in range(nsteps):
+                ef = self._efield(r[i])
+                bf = self._bfield(r[i])
+
+                r[i + 1], v[i + 1] = self.push(r[i], v[i], ef, bf, dt)
+
+                if self._bounding_electrodes.points_inside(r[i + 1]):
+
+                    r = r[:i + 1]
+                    v = v[:i + 1]
+
+                    break
 
         return r, v
 
