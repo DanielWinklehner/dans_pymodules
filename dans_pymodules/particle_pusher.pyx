@@ -82,11 +82,11 @@ class ParticlePusher(object):
 
                 r[i + 1], v[i + 1] = self.push(r[i], v[i], ef, bf, dt)
 
-                # Push velocity one more half-step forward
-                # TODO: Think about where to grab the fields and which r to use...
-                ef = self._efield(r[-1])
-                bf = self._bfield(r[-1])
-                _, v[-1] = self.push(r[-1], v[-1], ef, bf, 0.5 * dt)
+            # Push velocity one more half-step forward
+            # TODO: Think about where to grab the fields and which r to use...
+            ef = self._efield(r[nsteps])
+            bf = self._bfield(r[nsteps])
+            _, v[nsteps] = self.push(r[nsteps], v[nsteps], ef, bf, 0.5 * dt)
 
         else:
             # Track with electrode boundary check
