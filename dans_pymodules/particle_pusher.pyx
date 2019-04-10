@@ -72,9 +72,10 @@ class ParticlePusher(object):
 
         _, v[0] = self.push(r[0], v[0], ef, bf, -0.5 * dt)
 
+        cdef int i = 0
+
         if self._bounding_electrodes is None:
             # Track without electrode boundary check
-            cdef int i = 0
             for i in range(nsteps):
                 ef = self._efield(r[i])
                 bf = self._bfield(r[i])
@@ -89,7 +90,6 @@ class ParticlePusher(object):
 
         else:
             # Track with electrode boundary check
-            cdef int i = 0
             for i in range(nsteps):
                 ef = self._efield(r[i])
                 bf = self._bfield(r[i])
