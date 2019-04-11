@@ -19,6 +19,14 @@ class TransformationMatrix(object):
 
         self.epsilon = 1.0e-10  # Small value to test for identities
 
+    @property
+    def epsilon(self):
+        return self._epsilon
+
+    @epsilon.setter
+    def epsilon(self, epsilon):
+        self._epsilon = epsilon
+
     def matrix_from_vectors(self, _u, _v, _w, normalized=False):
         """
         Creates a matrix from three orthogonal vectors. These could be 
