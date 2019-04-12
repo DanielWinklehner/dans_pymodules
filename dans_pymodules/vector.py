@@ -83,7 +83,7 @@ class Vector(object):
         return np.arccos(np.dot(self._vector, other[:])/(self._length * other.length))
 
     def cross(self, other):
-        return np.cross(self._vector, other.vector)
+        return Vector(vector=np.cross(self._vector, other.vector))
 
 
 if __name__ == '__main__':
