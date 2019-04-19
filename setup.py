@@ -1,5 +1,6 @@
 from setuptools import setup
 from Cython.Build import cythonize
+import numpy
 
 setup(name='dans_pymodules',
       version='4.5.1',
