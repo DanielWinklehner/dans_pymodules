@@ -270,7 +270,7 @@ class Field(object):
             return self._load_from_pickle_file(filename)
 
         else:
-            print("Did not recognize the extension. Must be one of '.map', '.table', 'comsol', '.pickle'.")
+            print("Did not recognize the extension. Must be one of '.map', '.table', '.comsol', '.pickle'.")
             return 1
 
     def _load_from_agora_file(self, filename, mirror=False):
