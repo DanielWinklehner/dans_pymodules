@@ -176,10 +176,8 @@ class ParticlePusher(object):
              DTYPE1_t _dt):
 
         _v = self._v(_v, _efield, _bfield, _dt)  # Call the velocity function determined by the algorithm
-        _r += _v * _dt
 
-        return _r, _v
-
+        return  _r + _v * _dt, _v
 
 if __name__ == "__main__":
     h2p = IonSpecies(name="H2_1+", energy_mev=1.0, label="$\mathrm{H}_2^+$")
