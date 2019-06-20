@@ -239,7 +239,7 @@ class Field(object):
 
         return self._label
 
-    def load_field_from_file(self, filename=None, mirror=False):
+    def load_field_from_file(self, filename=None, mirror=False, **kwargs):
 
         if filename is None:
             fd = FileDialog()
@@ -259,7 +259,7 @@ class Field(object):
 
         elif ext == ".table":
             print("Detected OPERA table file from extension, loading...")
-            return self._load_from_table_file(filename)
+            return self._load_from_table_file(filename, **kwargs)
 
         elif ext == ".comsol":
             print("Detected COMSOL file from extension, loading...")
@@ -542,12 +542,16 @@ class Field(object):
 
         return 0
 
-    def _load_from_table_file(self, filename):
+    def _load_from_table_file(self, filename, extents=None, extents_dims=None):
+
+        if extents is not None:
+            assert extents_dims is not None, "Need to identify the extent directions"
 
         with open(filename, 'r') as infile:
 
             # Read first line with lengths (first three values after number label)
-            _n = np.array([int(val) - 1 for val in infile.readline().strip().split()])[1:4]
+            first_line = infile.readline().strip().split()
+            _n = np.array([int(val) - 1 for val in first_line])[:3]
 
             spatial_dims = 0
             efield_dims = 0
@@ -581,7 +585,18 @@ class Field(object):
                 if self._debug:
                     print("Header: '{}' recognized as unit {}".format(label, data[label]["unit"]))
 
+            if extents is not None:
+                for i, label in enumerate(extents_dims):
+                    data[label] = {}
+                    data[label]["column"] = int(col_no) + i
+                    data[label]["unit"] = "cm"  # TODO: Pass this from the loading function - PW
+                    spatial_dims += 1
+                    self._unit_scale = self._units_switch[data[label]["unit"]]
+
+            # print(spatial_dims, bfield_dims, efield_dims)
+
             n = {}
+            # if extents_dims is None:
             if "X" in data.keys():
                 n["X"] = _n[0] + 1
                 if "Y" in data.keys():
@@ -600,6 +615,13 @@ class Field(object):
                 n["X"] = 1
                 n["Y"] = 1
                 n["Z"] = _n[0] + 1
+            # else:
+            #     for i, dim in enumerate(extents_dims):
+            #         n[dim] = _n[i] + 1
+            #
+            #     for dim in ["X", "Y", "Z"]:
+            #         if dim not in extents_dims:
+            #             n[dim] = 1
 
             print("Sorted spatial dimension lengths: {}".format(n))
 
@@ -617,15 +639,41 @@ class Field(object):
 
             _data = np.zeros([array_len, spatial_dims + efield_dims + bfield_dims])
 
+            if extents is not None:
+                # TODO: Assuming 3D for now... -PW
+                xlims, ylims, zlims = extents[0], extents[1], extents[2]
+                _x = np.linspace(xlims[0], xlims[1], n["X"])
+                _y = np.linspace(ylims[0], ylims[1], n["Y"])
+                _z = np.linspace(zlims[0], zlims[1], n["Z"])
+
+                xv, yv, zv = np.meshgrid(_x, _y, _z, indexing='ij')
+                _data[:, 3] = xv.ravel()
+                _data[:, 4] = yv.ravel()
+                _data[:, 5] = zv.ravel()
+
             # Read data
-            for i, line in enumerate(infile):
-                _data[i] = [float(item) for item in line.split()]
+            if extents is None:
+                for i, line in enumerate(infile):
+                    _data[i] = [float(item) for item in line.split()]
+            else:
+                # TODO: Assuming 3D for now... -PW
+                for i, line in enumerate(infile):
+                    _data[i, :3] = [float(item) for item in line.split()]
 
         # Get limits and resolution from spatial columns if they exist
         for key, item in data.items():
             if item["unit"] in ["m", "cm", "mm"]:
-                rmin = _data[0][item["column"]]
-                rmax = _data[-1][item["column"]]
+                if extents is not None:
+                    if key == "X":
+                        rmin, rmax = extents[0]
+                    elif key == "Y":
+                        rmin, rmax = extents[1]
+                    elif key == "Z":
+                        rmin, rmax = extents[2]
+                else:
+                    rmin = _data[0][item["column"]]
+                    rmax = _data[-1][item["column"]]
+
                 item["limits"] = {"lower": rmin,
                                   "upper": rmax}
 
