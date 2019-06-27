@@ -442,9 +442,13 @@ class Field(object):
 
         self._dim = 3
 
+        # TODO: Add more labels as needed
         label_map = {"mir1x": "X",
                      "mir1y": "Y",
                      "mir1z": "Z",
+                     "X": "X",
+                     "Y": "Y",
+                     "Z": "Z",
                      "mf.Bx": "BX",
                      "mf.By": "BY",
                      "mf.Bz": "BZ"}
@@ -502,7 +506,7 @@ class Field(object):
              "Z": len(np.unique(_data[2]))}
 
         for key, item in data.items():
-            if item["unit"] == "mm":
+            if item["unit"] in ["mm", "cm", "m"]:
                 item["data"] = np.unique(_data[item["column"]])
 
             else:
@@ -516,7 +520,6 @@ class Field(object):
         self._dim_labels = []
 
         # Process the data into the class variables
-        # TODO: For now assume that field labels are either "BX", ... or "EX", ...
         label_selector = [["BX", "BY", "BZ"], ["EX", "EY", "EZ"]]
         field_type = len(np.unique([0 for key, item in data.items() if item["unit"] == "V/cm"]))
 
@@ -530,8 +533,6 @@ class Field(object):
 
                 if self._dim == 3:
                     #  Create a Interpolator object for each of the field dimensions
-                    # TODO: For now we assume that columns are labeled X, Y, Z and existed in the file
-
                     self._field[label_dict[key]] = RegularGridInterpolator(
                         points=[data["X"]["data"] * self._unit_scale,
                                 data["Y"]["data"] * self._unit_scale,

@@ -15,6 +15,7 @@ DTYPE2 = np.int
 ctypedef np.float64_t DTYPE1_t
 ctypedef np.int_t DTYPE2_t
 
+
 class ParticlePusher(object):
 
     def __init__(self, ion, algorithm="boris"):
