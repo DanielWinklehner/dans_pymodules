@@ -11,9 +11,9 @@ else:
     from field import Field
 
 DTYPE1 = np.float64
-DTYPE2 = np.int
+DTYPE2 = np.int64
 ctypedef np.float64_t DTYPE1_t
-ctypedef np.int_t DTYPE2_t
+ctypedef np.int64_t DTYPE2_t
 
 
 class ParticlePusher(object):
